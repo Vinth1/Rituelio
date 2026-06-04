@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Mode sombre piloté par une classe « dark » sur <html> (posée par next-themes). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
