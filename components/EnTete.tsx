@@ -1,6 +1,7 @@
 // Barre de titre affichée en haut de toutes les pages :
-// logo + nom « Rituelio » (lien vers l'accueil), accès « Classes » et bouton de thème.
+// logo « rituelio », accès « Classes » et bouton de thème.
 import Link from "next/link";
+import Logo from "./Logo";
 import BoutonTheme from "./BoutonTheme";
 
 export default function EnTete() {
@@ -10,22 +11,14 @@ export default function EnTete() {
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-lg shadow-sm"
-              aria-hidden="true"
-            >
-              🎲
-            </span>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Rituelio
-            </span>
+            <Logo />
           </Link>
           <nav>
             <Link
               href="/classe"
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-full px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Classes
             </Link>
