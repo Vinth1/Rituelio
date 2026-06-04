@@ -33,15 +33,14 @@ export default function CarteJeu({ jeu }: { jeu: Jeu }) {
         </div>
       </Link>
 
-      {/* Bouton « Projeter » — inerte pour l'instant (mode projection : Jalon 6) */}
+      {/* Bouton « Projeter » → vue plein écran pour le tableau (mode projection) */}
       <div className="border-t border-slate-100 p-3 dark:border-slate-700">
-        <button
-          type="button"
-          title="Projeter au tableau — à venir"
-          className="w-full rounded-lg bg-principal-clair px-3 py-1.5 text-sm font-semibold text-principal-fonce transition hover:bg-principal hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-principal/15 dark:text-principal"
+        <Link
+          href={`/jeux/${jeu.id}/projeter`}
+          className="block w-full rounded-lg bg-principal-clair px-3 py-1.5 text-center text-sm font-semibold text-principal-fonce transition hover:bg-principal hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-principal/15 dark:text-principal"
         >
           ▶ Projeter
-        </button>
+        </Link>
       </div>
     </article>
   );
