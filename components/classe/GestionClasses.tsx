@@ -131,7 +131,7 @@ export default function GestionClasses() {
           type="button"
           onClick={enregistrer}
           disabled={!modifie}
-          className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-principal px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
         >
           Enregistrer
         </button>
@@ -164,9 +164,9 @@ export default function GestionClasses() {
                   type="button"
                   aria-pressed={actif}
                   onClick={() => setClasseActiveId(c.id)}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
                     actif
-                      ? "bg-indigo-600 text-white shadow-sm"
+                      ? "bg-principal text-white shadow-sm"
                       : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -191,11 +191,11 @@ export default function GestionClasses() {
             onChange={(e) => setNomNouvelleClasse(e.target.value)}
             placeholder="Nom de la classe (ex. CM1, 6e FLE)"
             aria-label="Nom de la nouvelle classe"
-            className="w-full max-w-xs rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className="w-full max-w-xs rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            className="shrink-0 rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
             + Nouvelle classe
           </button>

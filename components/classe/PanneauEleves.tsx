@@ -74,11 +74,11 @@ export default function PanneauEleves({
           onChange={(e) => setNouvelEleve(e.target.value)}
           placeholder="Nom de l'élève"
           aria-label="Nom du nouvel élève"
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="shrink-0 rounded-lg bg-principal px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           Ajouter
         </button>
@@ -102,7 +102,7 @@ export default function PanneauEleves({
                 value={eleve.nom}
                 onChange={(e) => onRenommerEleve(eleve.id, e.target.value)}
                 aria-label={`Nom de l'élève ${i + 1}`}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
               <button
                 type="button"
@@ -131,13 +131,13 @@ export default function PanneauEleves({
           onChange={(e) => setImportTexte(e.target.value)}
           rows={4}
           placeholder={"Alice\nBob\nChloé"}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
         />
         <button
           type="button"
           onClick={importer}
           disabled={!importTexte.trim()}
-          className="self-start rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+          className="self-start rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
         >
           Importer
         </button>

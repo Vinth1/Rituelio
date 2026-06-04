@@ -25,7 +25,7 @@ export default async function PageJeu({
     <div className="mx-auto max-w-3xl px-4 py-6">
       <Link
         href="/"
-        className="inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-400 dark:hover:text-slate-200"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-400 dark:hover:text-slate-200"
       >
         <span aria-hidden="true">←</span> Tous les jeux
       </Link>
