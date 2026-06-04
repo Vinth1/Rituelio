@@ -19,7 +19,7 @@ export default function BoutonTheme() {
       type="button"
       onClick={() => setTheme(sombre ? "light" : "dark")}
       aria-label={sombre ? "Activer le thème clair" : "Activer le thème sombre"}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
     >
       <span aria-hidden="true">{monte ? (sombre ? "☀️" : "🌙") : "🌗"}</span>
     </button>

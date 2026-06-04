@@ -9,7 +9,7 @@ export default function CarteJeu({ jeu }: { jeu: Jeu }) {
   return (
     <Link
       href={`/jeux/${jeu.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800"
     >
       <div
         className={`flex h-[60px] items-center justify-center text-3xl ${couleurBande(jeu.couleur)}`}
