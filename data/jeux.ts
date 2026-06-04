@@ -7,7 +7,8 @@ export type CategorieJeu =
   | "conjugaison"
   | "lexique"
   | "orthographe"
-  | "expression-orale";
+  | "expression-orale"
+  | "culture-francophone";
 
 export type Jeu = {
   id: string;                 // slug unique, ex : "morpion-des-verbes"
@@ -142,5 +143,21 @@ export const jeux: Jeu[] = [
       "En binômes : l'un décrit, l'autre dessine ce qu'il comprend.",
       "Limiter chaque description à 30 secondes.",
     ],
+  },
+  {
+    id: "quiz-culture",
+    titre: "Quiz culture",
+    categorie: "culture-francophone",
+    type: "jouable",
+    resume: "Quiz par thèmes",
+    icone: "🧠",
+    couleur: "blue",
+    duree: "10 min",
+    composant: "QuizCulture",
+    objectifs: [
+      "Mobiliser des connaissances culturelles (géographie, histoire, sports, chanson)",
+      "Lire une question, choisir une réponse et se corriger en autonomie",
+    ],
+    aide: "En autonomie sur un poste, ou en équipe au tableau : laisser lire l'explication après chaque réponse.",
   },
 ];

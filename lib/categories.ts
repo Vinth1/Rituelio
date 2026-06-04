@@ -17,6 +17,7 @@ export const CATEGORIES: InfoCategorie[] = [
   { slug: "lexique", label: "Lexique", icone: "📚" },
   { slug: "orthographe", label: "Orthographe", icone: "✏️" },
   { slug: "expression-orale", label: "Expression orale", icone: "🗣️" },
+  { slug: "culture-francophone", label: "Quizz Culture", icone: "🧠" },
 ];
 
 // Retourne le libellé lisible d'une catégorie (ou le slug en dernier recours).

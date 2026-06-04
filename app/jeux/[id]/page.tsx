@@ -1,12 +1,13 @@
-// Fiche d'un jeu. Affiche « comment y jouer » (matériel, déroulé, variantes).
-// L'aide pédagogique (objectifs, conseils) n'est montrée QUE côté prof
-// (paramètre ?espace=eleve la masque). Contenu lu depuis data/jeux.ts.
+// Fiche d'un jeu. Affiche « comment y jouer » (matériel, déroulé, variantes) ;
+// pour un jeu jouable relié à un composant, lance directement ce composant.
+// L'aide pédagogique (objectifs, conseils) n'est montrée QUE côté prof.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { jeux } from "@/data/jeux";
 import { couleurBande } from "@/lib/couleurs";
 import { libelleCategorie } from "@/lib/categories";
 import Badge from "@/components/Badge";
+import { JEUX_JOUABLES } from "@/components/jeux/registre";
 
 export default async function PageJeu({
   params,
@@ -23,6 +24,10 @@ export default async function PageJeu({
   const estEleve = espace === "eleve";
   const retourHref = estEleve ? "/eleve" : "/prof";
   const retourLabel = estEleve ? "Retour aux jeux" : "Retour à l'espace prof";
+
+  // Jeu jouable relié à un composant React via le champ `composant`.
+  const JeuJouable =
+    jeu.type === "jouable" && jeu.composant ? JEUX_JOUABLES[jeu.composant] : undefined;
 
   const aDuContenu =
     (jeu.materiel?.length ?? 0) > 0 ||
@@ -58,46 +63,55 @@ export default async function PageJeu({
         </p>
       </div>
 
-      {/* Comment y jouer */}
-      {jeu.materiel?.length ? (
+      {JeuJouable ? (
+        /* Jeu jouable : on lance directement le composant */
         <section className="mt-6">
-          <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Matériel</h2>
-          <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
-            {jeu.materiel.map((m, i) => (
-              <li key={i}>{m}</li>
-            ))}
-          </ul>
+          <JeuJouable />
         </section>
-      ) : null}
+      ) : (
+        <>
+          {/* Comment y jouer */}
+          {jeu.materiel?.length ? (
+            <section className="mt-6">
+              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Matériel</h2>
+              <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+                {jeu.materiel.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-      {jeu.deroule?.length ? (
-        <section className="mt-6">
-          <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Déroulé</h2>
-          <ol className="list-decimal space-y-1 pl-5 text-slate-600 dark:text-slate-300">
-            {jeu.deroule.map((etape, i) => (
-              <li key={i}>{etape}</li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+          {jeu.deroule?.length ? (
+            <section className="mt-6">
+              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Déroulé</h2>
+              <ol className="list-decimal space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+                {jeu.deroule.map((etape, i) => (
+                  <li key={i}>{etape}</li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
 
-      {jeu.variantes?.length ? (
-        <section className="mt-6">
-          <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Variantes</h2>
-          <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
-            {jeu.variantes.map((v, i) => (
-              <li key={i}>{v}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+          {jeu.variantes?.length ? (
+            <section className="mt-6">
+              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Variantes</h2>
+              <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+                {jeu.variantes.map((v, i) => (
+                  <li key={i}>{v}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-      {!aDuContenu && (
-        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-          {jeu.type === "jouable"
-            ? "Ce jeu se joue directement dans le navigateur — le mini-jeu interactif sera ajouté plus tard."
-            : "Le déroulé détaillé de ce jeu sera ajouté bientôt."}
-        </div>
+          {!aDuContenu && (
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+              {jeu.type === "jouable"
+                ? "Ce jeu se joue directement dans le navigateur — le mini-jeu interactif sera ajouté plus tard."
+                : "Le déroulé détaillé de ce jeu sera ajouté bientôt."}
+            </div>
+          )}
+        </>
       )}
 
       {/* Aide pédagogique : visible uniquement côté prof */}
