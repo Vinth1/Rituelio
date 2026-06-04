@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import EnTete from "@/components/EnTete";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Police arrondie et lisible, appliquée à tout le site.
+const nunito = Nunito({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-nunito",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +25,7 @@ export default function RootLayout({
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
         <Providers>
