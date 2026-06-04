@@ -1,11 +1,10 @@
-// Grille principale : une carte par jeu (lues depuis data/jeux.ts),
-// suivie de la carte « + Nouveau jeu ».
-
-import { jeux } from "@/data/jeux";
+// Grille responsive de cartes : reçoit la liste (déjà filtrée) de jeux à
+// afficher, suivie de la carte « + Nouveau jeu ».
+import type { Jeu } from "@/data/jeux";
 import CarteJeu from "./CarteJeu";
 import CarteNouveauJeu from "./CarteNouveauJeu";
 
-export default function GrilleJeux() {
+export default function GrilleJeux({ jeux }: { jeux: Jeu[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {jeux.map((jeu) => (

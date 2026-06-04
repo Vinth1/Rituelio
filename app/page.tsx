@@ -1,18 +1,11 @@
-import GrilleJeux from "@/components/GrilleJeux";
+import { jeux } from "@/data/jeux";
+import Catalogue from "@/components/Catalogue";
 
 export default function Home() {
   return (
-    <div className="mx-auto max-w-6xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Tous les jeux
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Choisis un rituel à lancer en classe.
-        </p>
-      </header>
-
-      <GrilleJeux />
+    <div className="mx-auto max-w-6xl px-4 py-6">
+      <h1 className="sr-only">Rituelio — catalogue des jeux et rituels</h1>
+      <Catalogue jeux={jeux} />
     </div>
   );
 }

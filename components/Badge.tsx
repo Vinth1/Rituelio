@@ -7,8 +7,8 @@ export default function Badge({ type }: { type: Jeu["type"] }) {
   const estJouable = type === "jouable";
 
   const style = estJouable
-    ? "bg-emerald-100 text-emerald-700"
-    : "bg-slate-100 text-slate-600";
+    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
 
   return (
     <span
