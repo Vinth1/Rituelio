@@ -17,38 +17,15 @@ import {
   ajouterSeance,
   seancesDeClasse,
 } from "@/lib/historique-conjugaison";
+import { ligneCorrecte } from "@/lib/conjugaison";
 import { couleurBande } from "@/lib/couleurs";
 
 const ACCENT = "green"; // accent de couleur du rituel « conjugaison »
-
-// Pronoms acceptés pour chaque ligne (gère l'élision « j' » et les variantes).
-const PRONOMS_ACCEPTES: string[][] = [
-  ["je", "j"],
-  ["tu"],
-  ["il", "elle", "on"],
-  ["nous"],
-  ["vous"],
-  ["ils", "elles"],
-];
 
 type Phase = "menu" | "jeu" | "historique";
 type Ligne = { pronom: string; forme: string; valide: boolean | null };
 type Partie = { verbe: Verbe; conj: Conjugaison };
 type Contrainte = { label: string; validee: boolean };
-
-// Insensible à la casse, aux accents et aux espaces.
-function normaliser(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, "");
-}
-
-// Pour les pronoms : on enlève en plus tout ce qui n'est pas une lettre (« j' »).
-function normaliserPronom(s: string): string {
-  return normaliser(s).replace(/[^a-z]/g, "");
-}
 
 function lignesVides(): Ligne[] {
   return Array.from({ length: 6 }, () => ({
@@ -56,12 +33,6 @@ function lignesVides(): Ligne[] {
     forme: "",
     valide: null,
   }));
-}
-
-function ligneCorrecte(ligne: Ligne, conj: Conjugaison, i: number): boolean {
-  const pronomOk = PRONOMS_ACCEPTES[i].includes(normaliserPronom(ligne.pronom));
-  const formeOk = normaliser(ligne.forme) === normaliser(conj.formes[i]);
-  return pronomOk && formeOk;
 }
 
 // Un tableau de conjugaison (6 lignes à compléter).
@@ -224,7 +195,7 @@ export default function ConjugaisonEntrainement() {
   function verifierLigne(t: number, i: number) {
     const conj = parties[t]?.conj;
     if (!conj) return;
-    const ok = ligneCorrecte(saisies[t][i], conj, i);
+    const ok = ligneCorrecte(saisies[t][i].pronom, saisies[t][i].forme, conj, i);
     setSaisies((prev) =>
       prev.map((tab, ti) =>
         ti === t
@@ -273,7 +244,7 @@ export default function ConjugaisonEntrainement() {
       lignes: saisies[t].map((lg, i) => ({
         pronom: lg.pronom,
         forme: lg.forme,
-        correcte: ligneCorrecte(lg, p.conj, i),
+        correcte: ligneCorrecte(lg.pronom, lg.forme, p.conj, i),
       })),
     }));
     const seance: SeanceConj = {
