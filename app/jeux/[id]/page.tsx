@@ -31,15 +31,20 @@ export default async function PageJeu({
   const JeuJouable =
     jeu.type === "jouable" && jeu.composant ? JEUX_JOUABLES[jeu.composant] : undefined;
 
-  // Certains jeux jouables affichent leur propre en-tête : on masque alors la
-  // bannière de cette page (icône, titre, résumé) pour gagner de la place.
-  const masquerEntete = jeu.id === "conjugaison-entrainement";
+  // Les jeux jouables affichent leur propre titre : on masque la bannière de
+  // cette page (icône, titre, résumé) ; l'aide prof passe sur la carte (bulle « ? »).
+  const masquerEntete = jeu.type === "jouable";
 
   const aDuContenu =
     (jeu.materiel?.length ?? 0) > 0 ||
     (jeu.deroule?.length ?? 0) > 0 ||
     (jeu.variantes?.length ?? 0) > 0;
-  const montrerAide = !estEleve && ((jeu.objectifs?.length ?? 0) > 0 || Boolean(jeu.aide));
+  // L'aide prof n'est plus affichée sur la page des jeux jouables (elle est dans
+  // la bulle « ? » des cartes du catalogue) ; conservée pour d'éventuelles fiches.
+  const montrerAide =
+    !estEleve &&
+    jeu.type !== "jouable" &&
+    ((jeu.objectifs?.length ?? 0) > 0 || Boolean(jeu.aide));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
