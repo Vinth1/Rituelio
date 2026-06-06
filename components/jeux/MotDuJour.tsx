@@ -177,16 +177,9 @@ export default function MotDuJour() {
                   className={`mt-3 flex min-h-24 flex-col items-center justify-center rounded-xl p-3 text-center ${couleurBande(ACCENT)}`}
                 >
                   {mot ? (
-                    <>
-                      <span className="text-2xl font-bold leading-tight">
-                        {mot.mot}
-                      </span>
-                      {mot.note && (
-                        <span className="mt-1 text-xs opacity-80">
-                          {mot.note}
-                        </span>
-                      )}
-                    </>
+                    <span className="text-2xl font-bold leading-tight">
+                      {mot.mot}
+                    </span>
                   ) : (
                     <span className="text-3xl font-bold opacity-50">—</span>
                   )}

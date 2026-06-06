@@ -3,7 +3,7 @@
 // Page de gestion des classes : créer plusieurs classes (pastilles), gérer
 // leurs élèves, et enregistrer dans le localStorage via un bouton « Enregistrer »
 // (pas de sauvegarde automatique).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type Classe,
   type Eleve,
@@ -16,7 +16,6 @@ import PanneauEleves from "./PanneauEleves";
 export default function GestionClasses() {
   const [classes, setClasses] = useState<Classe[]>([]);
   const [classeActiveId, setClasseActiveId] = useState<string | null>(null);
-  const [sauvegarde, setSauvegarde] = useState("[]"); // JSON du dernier état enregistré
   const [charge, setCharge] = useState(false);
   const [nomNouvelleClasse, setNomNouvelleClasse] = useState("");
 
@@ -24,26 +23,16 @@ export default function GestionClasses() {
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
-    setSauvegarde(JSON.stringify(initiales));
     setClasseActiveId(initiales[0]?.id ?? null);
     setCharge(true);
   }, []);
 
-  const modifie = useMemo(
-    () => charge && JSON.stringify(classes) !== sauvegarde,
-    [charge, classes, sauvegarde],
-  );
-
-  // Avertir avant de quitter la page si des modifications ne sont pas enregistrées.
+  // Enregistrement automatique : chaque changement est écrit dans le navigateur,
+  // pour que les jeux voient aussitôt les classes (aucun bouton à cliquer).
   useEffect(() => {
-    if (!modifie) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [modifie]);
+    if (!charge) return;
+    enregistrerClasses(classes);
+  }, [classes, charge]);
 
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
 
@@ -108,11 +97,6 @@ export default function GestionClasses() {
     ]);
   }
 
-  function enregistrer() {
-    enregistrerClasses(classes);
-    setSauvegarde(JSON.stringify(classes));
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
@@ -120,33 +104,18 @@ export default function GestionClasses() {
           Mes classes
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Gère tes classes et leurs élèves. Ces listes serviront à la roue du
-          hasard. Pense à <strong>enregistrer</strong> tes changements.
+          Gère tes classes et leurs élèves. Tes changements sont enregistrés
+          automatiquement et aussitôt disponibles dans les jeux.
         </p>
       </header>
 
-      {/* Barre d'enregistrement */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={enregistrer}
-          disabled={!modifie}
-          className="rounded-full bg-principal px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Enregistrer
-        </button>
-        <span className="text-sm" aria-live="polite">
-          {modifie ? (
-            <span className="text-amber-600 dark:text-amber-400">
-              ● Modifications non enregistrées
-            </span>
-          ) : (
-            <span className="text-emerald-600 dark:text-emerald-400">
-              ✓ Enregistré
-            </span>
-          )}
-        </span>
-      </div>
+      {/* Enregistrement automatique */}
+      <p
+        className="text-sm text-emerald-600 dark:text-emerald-400"
+        aria-live="polite"
+      >
+        ✓ Enregistré automatiquement
+      </p>
 
       {/* Pastilles des classes + création */}
       <div className="flex flex-col gap-3">
