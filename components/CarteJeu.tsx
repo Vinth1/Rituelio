@@ -5,10 +5,12 @@ import Link from "next/link";
 import type { Jeu } from "@/data/jeux";
 import { couleurBande } from "@/lib/couleurs";
 import Badge from "./Badge";
+import BoutonAide from "./BoutonAide";
 
 export default function CarteJeu({ jeu }: { jeu: Jeu }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+      <BoutonAide jeu={jeu} />
       <Link
         href={`/jeux/${jeu.id}?espace=prof`}
         className="flex flex-1 flex-col transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal group-hover:-translate-y-0.5"
