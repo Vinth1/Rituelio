@@ -8,56 +8,23 @@ import {
   trouverConjugaison,
 } from "@/lib/conjugaison";
 
-export type VerbeRef = { infinitif: string; temps: string; mode: string };
-export type LigneSaisie = { pronom: string; forme: string };
+import type {
+  CopieCorrigee,
+  CopieEntrante,
+  EvaluationPublique,
+  LigneCorrigee,
+  ResumeEvaluation,
+  VerbeRef,
+} from "@/lib/evaluation-types";
 
-export type EvaluationPublique = {
-  code: string;
-  name: string;
-  date: string;
-  status: string;
-  verbes: VerbeRef[];
-  contraintes: string[];
-};
-
-export type CopieEntrante = {
-  prenom: string;
-  tableaux: { lignes: LigneSaisie[] }[]; // 2 tableaux × 6 lignes
-  phrase: string;
-};
-
-export type LigneCorrigee = {
-  pronom: string;
-  forme: string;
-  attendue: string;
-  correcte: boolean;
-};
-export type CopieCorrigee = {
-  id: string;
-  prenom: string;
-  rendueLe: number;
-  tableaux: { verbe: VerbeRef; lignes: LigneCorrigee[] }[];
-  phrase: string;
-  contraintes: { label: string; validee: boolean }[];
-  formesCorrectes: number;
-  brut: number;
-  max: number;
-  noteAuto: number;
-  noteForcee: number | null;
-  note: number;
-  commentaire: string;
-};
-
-export type ResumeEvaluation = {
-  code: string;
-  name: string;
-  date: string;
-  status: string;
-  classeId: string;
-  classeNom: string;
-  verbes: VerbeRef[];
-  contraintes: string[];
-  nbCopies: number;
+// Re-export pour conserver les imports existants (routes API).
+export type {
+  CopieCorrigee,
+  CopieEntrante,
+  EvaluationPublique,
+  LigneCorrigee,
+  ResumeEvaluation,
+  VerbeRef,
 };
 
 function id(): string {
