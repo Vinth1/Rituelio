@@ -3,6 +3,7 @@
 // l'importer ici et l'ajouter à la table.
 import type { ComponentType } from "react";
 import ChaineLexicale from "./ChaineLexicale";
+import ConjugaisonEntrainement from "./ConjugaisonEntrainement";
 import DefiLecture from "./DefiLecture";
 import MotDuJour from "./MotDuJour";
 import Pendu from "./Pendu";
@@ -10,6 +11,7 @@ import QuizCulture from "./QuizCulture";
 
 export const JEUX_JOUABLES: Record<string, ComponentType> = {
   ChaineLexicale,
+  ConjugaisonEntrainement,
   DefiLecture,
   MotDuJour,
   Pendu,

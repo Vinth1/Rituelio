@@ -114,4 +114,15 @@ export const jeux: Jeu[] = [
     ],
     aide: "Choisis un thème et un mode (tour simple ou élimination) ; tire un élève au sort, valide chaque mot « Correct » ou « Hors thème ». Pensé pour le vidéoprojecteur.",
   },
+  {
+    id: "conjugaison-entrainement",
+    titre: "Conjugaison — entraînement",
+    categorie: "conjugaison",
+    type: "jouable",
+    resume: "Deux verbes à conjuguer",
+    icone: "📝",
+    couleur: "green",
+    duree: "20 min",
+    composant: "ConjugaisonEntrainement",
+  },
 ];
