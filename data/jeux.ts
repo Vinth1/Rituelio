@@ -176,4 +176,20 @@ export const jeux: Jeu[] = [
     ],
     aide: "En autonomie sur un poste, ou en équipe au tableau : laisser lire l'explication après chaque réponse.",
   },
+  {
+    id: "defi-lecture",
+    titre: "Défi lecture",
+    categorie: "expression-orale",
+    type: "jouable",
+    resume: "Lecture à voix haute",
+    icone: "🗣️",
+    couleur: "coral",
+    duree: "10 min",
+    composant: "DefiLecture",
+    objectifs: [
+      "Lire à voix haute des mots difficiles et des virelangues",
+      "Soigner sa prononciation et distinguer les sons proches",
+    ],
+    aide: "Affiche un défi, écoute le modèle, tire un élève au sort puis valide sa lecture (« Réussi » ou « À retravailler »).",
+  },
 ];
