@@ -4,10 +4,12 @@
 import type { ComponentType } from "react";
 import DefiLecture from "./DefiLecture";
 import MotDuJour from "./MotDuJour";
+import Pendu from "./Pendu";
 import QuizCulture from "./QuizCulture";
 
 export const JEUX_JOUABLES: Record<string, ComponentType> = {
   DefiLecture,
   MotDuJour,
+  Pendu,
   QuizCulture,
 };
