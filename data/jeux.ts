@@ -31,6 +31,9 @@ export type Jeu = {
 
   // --- Jeux de type "jouable" ---
   composant?: string;         // nom du composant React, ex : "MorpionDesVerbes"
+
+  // --- Accès ---
+  profSeulement?: boolean;    // si vrai : réservé à l'espace prof (caché côté élève)
 };
 
 export const jeux: Jeu[] = [
@@ -44,6 +47,7 @@ export const jeux: Jeu[] = [
     couleur: "amber",
     duree: "5 min",
     composant: "MotDuJour",
+    profSeulement: true,
     objectifs: [
       "Lire à voix haute des mots difficiles (lettres muettes, consonnes doublées, graphèmes complexes)",
       "Repérer les pièges de prononciation du français",
@@ -76,6 +80,7 @@ export const jeux: Jeu[] = [
     couleur: "coral",
     duree: "10 min",
     composant: "DefiLecture",
+    profSeulement: true,
     objectifs: [
       "Lire à voix haute des mots difficiles et des virelangues",
       "Soigner sa prononciation et distinguer les sons proches",
@@ -108,6 +113,7 @@ export const jeux: Jeu[] = [
     couleur: "purple",
     duree: "15 min",
     composant: "ChaineLexicale",
+    profSeulement: true,
     objectifs: [
       "Mobiliser et enrichir le vocabulaire d'un champ lexical",
       "Prendre la parole à tour de rôle",
@@ -124,5 +130,6 @@ export const jeux: Jeu[] = [
     couleur: "green",
     duree: "20 min",
     composant: "ConjugaisonEntrainement",
+    profSeulement: true,
   },
 ];

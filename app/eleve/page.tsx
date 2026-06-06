@@ -17,9 +17,11 @@ export default function EspaceEleve() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {jeux.map((jeu) => (
-          <CarteJeuEleve key={jeu.id} jeu={jeu} />
-        ))}
+        {jeux
+          .filter((jeu) => !jeu.profSeulement)
+          .map((jeu) => (
+            <CarteJeuEleve key={jeu.id} jeu={jeu} />
+          ))}
       </div>
     </div>
   );

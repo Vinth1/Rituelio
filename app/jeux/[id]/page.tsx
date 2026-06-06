@@ -2,7 +2,7 @@
 // pour un jeu jouable relié à un composant, lance directement ce composant.
 // L'aide pédagogique (objectifs, conseils) n'est montrée QUE côté prof.
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { jeux } from "@/data/jeux";
 import { couleurBande } from "@/lib/couleurs";
 import { libelleCategorie } from "@/lib/categories";
@@ -22,6 +22,8 @@ export default async function PageJeu({
   if (!jeu) notFound();
 
   const estEleve = espace === "eleve";
+  // Les jeux « prof uniquement » ne sont pas accessibles depuis l'espace élève.
+  if (estEleve && jeu.profSeulement) redirect("/eleve");
   const retourHref = estEleve ? "/eleve" : "/prof";
   const retourLabel = estEleve ? "Retour aux jeux" : "Retour à l'espace prof";
 
