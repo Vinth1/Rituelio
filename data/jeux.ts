@@ -98,4 +98,20 @@ export const jeux: Jeu[] = [
     ],
     aide: "Le prof tape un mot caché (ou en pioche un au hasard) ; les élèves proposent des lettres. 6 erreurs maximum avant la défaite.",
   },
+  {
+    id: "chaine-lexicale",
+    titre: "Chaîne lexicale",
+    categorie: "lexique",
+    type: "jouable",
+    resume: "Trouver des mots d'un thème",
+    icone: "🔗",
+    couleur: "purple",
+    duree: "15 min",
+    composant: "ChaineLexicale",
+    objectifs: [
+      "Mobiliser et enrichir le vocabulaire d'un champ lexical",
+      "Prendre la parole à tour de rôle",
+    ],
+    aide: "Choisis un thème et un mode (tour simple ou élimination) ; tire un élève au sort, valide chaque mot « Correct » ou « Hors thème ». Pensé pour le vidéoprojecteur.",
+  },
 ];
