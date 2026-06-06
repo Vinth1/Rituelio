@@ -82,4 +82,20 @@ export const jeux: Jeu[] = [
     ],
     aide: "Affiche un défi, écoute le modèle, tire un élève au sort puis valide sa lecture (« Réussi » ou « À retravailler »).",
   },
+  {
+    id: "pendu",
+    titre: "Le pendu",
+    categorie: "orthographe",
+    type: "jouable",
+    resume: "Devine le mot lettre par lettre",
+    icone: "🪢",
+    couleur: "teal",
+    duree: "10 min",
+    composant: "Pendu",
+    objectifs: [
+      "Mémoriser l'orthographe des mots",
+      "Repérer les lettres qui composent un mot",
+    ],
+    aide: "Le prof tape un mot caché (ou en pioche un au hasard) ; les élèves proposent des lettres. 6 erreurs maximum avant la défaite.",
+  },
 ];
