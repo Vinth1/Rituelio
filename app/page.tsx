@@ -47,6 +47,15 @@ export default function Accueil() {
           </Link>
         ))}
       </div>
+
+      <div className="mt-8 text-center">
+        <Link
+          href="/rejoindre"
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-white hover:text-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800"
+        >
+          <span aria-hidden="true">📝</span> Rejoindre une évaluation
+        </Link>
+      </div>
     </div>
   );
 }
