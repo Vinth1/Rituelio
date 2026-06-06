@@ -29,6 +29,10 @@ export default async function PageJeu({
   const JeuJouable =
     jeu.type === "jouable" && jeu.composant ? JEUX_JOUABLES[jeu.composant] : undefined;
 
+  // Certains jeux jouables affichent leur propre en-tête : on masque alors la
+  // bannière de cette page (icône, titre, résumé) pour gagner de la place.
+  const masquerEntete = jeu.id === "conjugaison-entrainement";
+
   const aDuContenu =
     (jeu.materiel?.length ?? 0) > 0 ||
     (jeu.deroule?.length ?? 0) > 0 ||
@@ -44,24 +48,30 @@ export default async function PageJeu({
         <span aria-hidden="true">←</span> {retourLabel}
       </Link>
 
-      <div
-        className={`mt-4 flex h-28 items-center justify-center rounded-3xl text-5xl ${couleurBande(jeu.couleur)}`}
-        aria-hidden="true"
-      >
-        {jeu.icone}
-      </div>
+      {!masquerEntete && (
+        <>
+          <div
+            className={`mt-4 flex h-28 items-center justify-center rounded-3xl text-5xl ${couleurBande(jeu.couleur)}`}
+            aria-hidden="true"
+          >
+            {jeu.icone}
+          </div>
 
-      <div className="mt-4 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{jeu.titre}</h1>
-          <Badge type={jeu.type} />
-        </div>
-        <p className="text-slate-600 dark:text-slate-300">{jeu.resume}</p>
-        <p className="text-sm text-slate-400">
-          Rituel : {libelleCategorie(jeu.categorie)}
-          {jeu.duree ? ` · ${jeu.duree}` : ""}
-        </p>
-      </div>
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {jeu.titre}
+              </h1>
+              <Badge type={jeu.type} />
+            </div>
+            <p className="text-slate-600 dark:text-slate-300">{jeu.resume}</p>
+            <p className="text-sm text-slate-400">
+              Rituel : {libelleCategorie(jeu.categorie)}
+              {jeu.duree ? ` · ${jeu.duree}` : ""}
+            </p>
+          </div>
+        </>
+      )}
 
       {JeuJouable ? (
         /* Jeu jouable : on lance directement le composant */
