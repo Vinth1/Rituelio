@@ -58,6 +58,22 @@ export const jeux: Jeu[] = [
     variantes: ["Mot proposé à tour de rôle par un élève chaque semaine."],
   },
   {
+    id: "mot-du-jour",
+    titre: "Mot du jour",
+    categorie: "mot-de-la-semaine",
+    type: "jouable",
+    resume: "Un mot difficile par élève",
+    icone: "🎲",
+    couleur: "amber",
+    duree: "5 min",
+    composant: "MotDuJour",
+    objectifs: [
+      "Lire à voix haute des mots difficiles (lettres muettes, consonnes doublées, graphèmes complexes)",
+      "Repérer les pièges de prononciation du français",
+    ],
+    aide: "Choisis une classe, distribue un mot à chacun (dé global) ou retire un mot pour un élève. Fais lire chaque mot à voix haute ; l'indice sous le mot aide à corriger la lecture.",
+  },
+  {
     id: "morpion-des-verbes",
     titre: "Le morpion des verbes",
     categorie: "conjugaison",
