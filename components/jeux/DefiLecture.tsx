@@ -152,7 +152,6 @@ export default function DefiLecture() {
           <p className="text-2xl font-bold leading-snug sm:text-3xl">
             {defi.texte}
           </p>
-          {defi.note && <p className="mt-2 text-sm opacity-80">{defi.note}</p>}
         </div>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <button
