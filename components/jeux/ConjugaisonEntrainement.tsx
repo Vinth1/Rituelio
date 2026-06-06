@@ -19,10 +19,12 @@ import {
 } from "@/lib/historique-conjugaison";
 import { ligneCorrecte } from "@/lib/conjugaison";
 import { couleurBande } from "@/lib/couleurs";
+import SuiviEvaluation from "@/components/evaluation/SuiviEvaluation";
 
 const ACCENT = "green"; // accent de couleur du rituel « conjugaison »
 
-type Phase = "menu" | "jeu" | "historique";
+type Phase = "menu" | "jeu" | "historique" | "suiviEval";
+type ModeJeu = "entrainement" | "evaluation";
 type Ligne = { pronom: string; forme: string; valide: boolean | null };
 type Partie = { verbe: Verbe; conj: Conjugaison };
 type Contrainte = { label: string; validee: boolean };
@@ -121,6 +123,9 @@ export default function ConjugaisonEntrainement() {
   const [classes, setClasses] = useState<Classe[]>([]);
   const [charge, setCharge] = useState(false);
   const [phase, setPhase] = useState<Phase>("menu");
+  const [modeJeu, setModeJeu] = useState<ModeJeu>("entrainement");
+  const [codeEval, setCodeEval] = useState<string | null>(null);
+  const [creationEnCours, setCreationEnCours] = useState(false);
 
   // Partie en cours
   const [parties, setParties] = useState<Partie[]>([]);
@@ -184,6 +189,43 @@ export default function ConjugaisonEntrainement() {
     setPhraseCorrigee("");
     setContraintes(contraintesChoisies.map((label) => ({ label, validee: false })));
     setPhase("jeu");
+  }
+
+  // Crée une évaluation côté serveur, puis bascule sur l'écran de suivi.
+  async function creerEvaluation() {
+    if (!classeId || creationEnCours) return;
+    const v1 = verbes.find((v) => v.infinitif === verbe1Inf) ?? verbes[0];
+    const v2 = verbes.find((v) => v.infinitif === verbe2Inf) ?? verbes[0];
+    const c1 = v1.conjugaisons[conj1Idx] ?? v1.conjugaisons[0];
+    const c2 = v2.conjugaisons[conj2Idx] ?? v2.conjugaisons[0];
+    const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "";
+    setCreationEnCours(true);
+    try {
+      const r = await fetch("/api/evaluations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: `Évaluation du ${date}`,
+          classeId,
+          classeNom,
+          date,
+          verbes: [
+            { infinitif: v1.infinitif, temps: c1.temps, mode: c1.mode },
+            { infinitif: v2.infinitif, temps: c2.temps, mode: c2.mode },
+          ],
+          contraintes: contraintesChoisies,
+        }),
+      });
+      if (r.ok) {
+        const { code } = (await r.json()) as { code: string };
+        setCodeEval(code);
+        setPhase("suiviEval");
+      }
+    } catch {
+      /* réseau : le prof peut réessayer */
+    } finally {
+      setCreationEnCours(false);
+    }
   }
 
   // --- Actions (jeu) ---
@@ -293,6 +335,13 @@ export default function ConjugaisonEntrainement() {
   const champ =
     "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100";
 
+  // ---------- Écran : suivi d'une évaluation ----------
+  if (phase === "suiviEval" && codeEval) {
+    return (
+      <SuiviEvaluation code={codeEval} onRetour={() => setPhase("menu")} />
+    );
+  }
+
   // ---------- Écran : menu ----------
   if (phase === "menu") {
     return (
@@ -326,6 +375,22 @@ export default function ConjugaisonEntrainement() {
           </p>
         ) : (
           <div className="mt-6 flex flex-col gap-5">
+            <div className="inline-flex self-start rounded-full bg-slate-100 p-1 dark:bg-slate-700">
+              {(["entrainement", "evaluation"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setModeJeu(m)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
+                    modeJeu === m
+                      ? "bg-white text-principal shadow-sm dark:bg-slate-800"
+                      : "text-slate-500 dark:text-slate-300"
+                  }`}
+                >
+                  {m === "entrainement" ? "Entraînement" : "Évaluation"}
+                </button>
+              ))}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {([0, 1] as const).map((slot) => {
                 const inf = slot === 0 ? verbe1Inf : verbe2Inf;
@@ -467,14 +532,25 @@ export default function ConjugaisonEntrainement() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={lancer}
-              disabled={!classeId}
-              className={`${btnPrincipal} self-start`}
-            >
-              Lancer
-            </button>
+            {modeJeu === "entrainement" ? (
+              <button
+                type="button"
+                onClick={lancer}
+                disabled={!classeId}
+                className={`${btnPrincipal} self-start`}
+              >
+                Lancer
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={creerEvaluation}
+                disabled={!classeId || creationEnCours}
+                className={`${btnPrincipal} self-start`}
+              >
+                {creationEnCours ? "Création…" : "Créer l'évaluation"}
+              </button>
+            )}
           </div>
         )}
       </div>
