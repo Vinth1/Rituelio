@@ -119,15 +119,10 @@ export const jeux: Jeu[] = [
     titre: "Conjugaison — entraînement",
     categorie: "conjugaison",
     type: "jouable",
-    resume: "Deux verbes au tableau",
+    resume: "Deux verbes à conjuguer",
     icone: "📝",
     couleur: "green",
     duree: "20 min",
     composant: "ConjugaisonEntrainement",
-    objectifs: [
-      "Conjuguer deux verbes à différents temps",
-      "Produire une phrase correcte sous contraintes",
-    ],
-    aide: "Choisis 2 verbes, une classe et une date. La classe complète les 2 tableaux (pronom + forme), puis rédige une phrase utilisant les deux verbes. « Terminer la séance » l'enregistre dans l'historique de la classe.",
   },
 ];

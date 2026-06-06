@@ -1,12 +1,13 @@
 "use client";
 
 // Jeu jouable « Conjugaison — entraînement » (au tableau, mode projection).
-// Le prof choisit 2 verbes (verbe + temps + mode), une classe et une date, puis
-// projette 2 tableaux où la classe complète pronom + forme des 6 personnes, avec
-// vérification ligne par ligne. Une roue désigne un élève au hasard. La section
-// « Ma phrase » fait produire une phrase utilisant les 2 verbes sous contraintes.
-// La séance terminée est enregistrée dans un historique par classe (localStorage).
-import { useEffect, useState } from "react";
+// Le prof choisit 2 verbes (verbe + temps + mode), une classe, une date et les
+// contraintes de phrase, puis projette 2 tableaux où la classe complète pronom +
+// forme des 6 personnes, avec vérification ligne par ligne. Une roue désigne un
+// élève au hasard (avec une petite animation). La section « Ma phrase » fait
+// produire une phrase utilisant les 2 verbes sous contraintes. La séance terminée
+// est enregistrée dans un historique par classe (localStorage).
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { verbes, type Conjugaison, type Verbe } from "@/data/verbes";
 import { contraintesPhrase } from "@/data/contraintes-phrase";
@@ -142,6 +143,8 @@ export default function ConjugaisonEntrainement() {
   const [conj2Idx, setConj2Idx] = useState(0);
   const [classeId, setClasseId] = useState<string | null>(null);
   const [date, setDate] = useState("");
+  const [contraintesChoisies, setContraintesChoisies] = useState<string[]>([]);
+  const [nouvelleContrainte, setNouvelleContrainte] = useState("");
 
   // Communs
   const [classes, setClasses] = useState<Classe[]>([]);
@@ -152,10 +155,11 @@ export default function ConjugaisonEntrainement() {
   const [parties, setParties] = useState<Partie[]>([]);
   const [saisies, setSaisies] = useState<Ligne[][]>([]);
   const [eleveRoue, setEleveRoue] = useState<string | null>(null);
+  const [roulette, setRoulette] = useState(false);
+  const rouleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [phrase, setPhrase] = useState("");
   const [phraseCorrigee, setPhraseCorrigee] = useState("");
   const [contraintes, setContraintes] = useState<Contrainte[]>([]);
-  const [nouvelleContrainte, setNouvelleContrainte] = useState("");
 
   // Chargement des classes + date du jour (côté client uniquement).
   useEffect(() => {
@@ -166,9 +170,29 @@ export default function ConjugaisonEntrainement() {
     setCharge(true);
   }, []);
 
+  // Arrête l'animation de la roue si on quitte le jeu.
+  useEffect(() => {
+    return () => {
+      if (rouleRef.current) clearInterval(rouleRef.current);
+    };
+  }, []);
+
   const eleves = classes.find((c) => c.id === classeId)?.eleves ?? [];
 
-  // --- Actions ---
+  // --- Actions (menu) ---
+  function ajouterContrainteChoisie(label: string) {
+    const propre = label.trim();
+    if (!propre) return;
+    setContraintesChoisies((prev) =>
+      prev.includes(propre) ? prev : [...prev, propre],
+    );
+    setNouvelleContrainte("");
+  }
+
+  function retirerContrainteChoisie(idx: number) {
+    setContraintesChoisies((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   function lancer() {
     const v1 = verbes.find((v) => v.infinitif === verbe1Inf) ?? verbes[0];
     const v2 = verbes.find((v) => v.infinitif === verbe2Inf) ?? verbes[0];
@@ -180,11 +204,11 @@ export default function ConjugaisonEntrainement() {
     setEleveRoue(null);
     setPhrase("");
     setPhraseCorrigee("");
-    setContraintes(contraintesPhrase.map((label) => ({ label, validee: false })));
-    setNouvelleContrainte("");
+    setContraintes(contraintesChoisies.map((label) => ({ label, validee: false })));
     setPhase("jeu");
   }
 
+  // --- Actions (jeu) ---
   function majLigne(t: number, i: number, champ: "pronom" | "forme", val: string) {
     setSaisies((prev) =>
       prev.map((tab, ti) =>
@@ -210,9 +234,20 @@ export default function ConjugaisonEntrainement() {
     );
   }
 
+  // Tire un élève au hasard avec une petite animation (les prénoms défilent).
   function lancerRoue() {
-    if (eleves.length === 0) return;
-    setEleveRoue(eleves[Math.floor(Math.random() * eleves.length)].nom);
+    if (eleves.length === 0 || roulette) return;
+    setRoulette(true);
+    let ticks = 0;
+    rouleRef.current = setInterval(() => {
+      setEleveRoue(eleves[Math.floor(Math.random() * eleves.length)].nom);
+      ticks += 1;
+      if (ticks >= 15) {
+        if (rouleRef.current) clearInterval(rouleRef.current);
+        rouleRef.current = null;
+        setRoulette(false);
+      }
+    }, 80);
   }
 
   function basculerContrainte(idx: number) {
@@ -221,19 +256,12 @@ export default function ConjugaisonEntrainement() {
     );
   }
 
-  function ajouterContrainte() {
-    const label = nouvelleContrainte.trim();
-    if (!label) return;
-    setContraintes((prev) => [...prev, { label, validee: false }]);
-    setNouvelleContrainte("");
-  }
-
   function reinitialiser() {
     setSaisies([lignesVides(), lignesVides()]);
     setEleveRoue(null);
     setPhrase("");
     setPhraseCorrigee("");
-    setContraintes(contraintesPhrase.map((label) => ({ label, validee: false })));
+    setContraintes((prev) => prev.map((c) => ({ ...c, validee: false })));
   }
 
   function terminerSeance() {
@@ -379,6 +407,69 @@ export default function ConjugaisonEntrainement() {
               </label>
             </div>
 
+            {/* Contraintes de phrase : liste déroulante + saisie manuelle */}
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                Contraintes de phrase (optionnel)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value=""
+                  onChange={(e) => ajouterContrainteChoisie(e.target.value)}
+                  aria-label="Choisir une contrainte dans la liste"
+                  className={champ}
+                >
+                  <option value="">Choisir dans la liste…</option>
+                  {contraintesPhrase.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={nouvelleContrainte}
+                  onChange={(e) => setNouvelleContrainte(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      ajouterContrainteChoisie(nouvelleContrainte);
+                    }
+                  }}
+                  placeholder="…ou écrire une contrainte"
+                  aria-label="Écrire une contrainte"
+                  className={`min-w-0 flex-1 ${champ}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => ajouterContrainteChoisie(nouvelleContrainte)}
+                  className={btnFantome}
+                >
+                  Ajouter
+                </button>
+              </div>
+              {contraintesChoisies.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {contraintesChoisies.map((c, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                    >
+                      {c}
+                      <button
+                        type="button"
+                        onClick={() => retirerContrainteChoisie(i)}
+                        aria-label={`Retirer ${c}`}
+                        className="text-slate-400 transition hover:text-rose-500"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={lancer}
@@ -479,19 +570,18 @@ export default function ConjugaisonEntrainement() {
       <div
         className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 ${couleurBande(ACCENT)}`}
       >
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-            Au tableau
-          </p>
-          <p className="text-3xl font-extrabold">{eleveRoue ?? "—"}</p>
-        </div>
+        <p
+          className={`text-4xl font-extrabold transition ${roulette ? "animate-pulse" : ""}`}
+        >
+          {eleveRoue ?? "—"}
+        </p>
         <button
           type="button"
           onClick={lancerRoue}
-          disabled={eleves.length === 0}
+          disabled={eleves.length === 0 || roulette}
           className={btnPrincipal}
         >
-          <span aria-hidden="true">🎡</span> Lancer la roue
+          <span aria-hidden="true">🎡</span> {roulette ? "…" : "Lancer la roue"}
         </button>
       </div>
 
@@ -527,35 +617,28 @@ export default function ConjugaisonEntrainement() {
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               Contraintes
             </p>
-            {contraintes.map((c, i) => (
-              <label
-                key={i}
-                className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200"
-              >
-                <input
-                  type="checkbox"
-                  checked={c.validee}
-                  onChange={() => basculerContrainte(i)}
-                  className="h-4 w-4 rounded border-slate-300 text-principal focus:ring-principal"
-                />
-                <span className={c.validee ? "line-through opacity-60" : ""}>
-                  {c.label}
-                </span>
-              </label>
-            ))}
-            <div className="mt-1 flex gap-2">
-              <input
-                type="text"
-                value={nouvelleContrainte}
-                onChange={(e) => setNouvelleContrainte(e.target.value)}
-                placeholder="Ajouter une contrainte"
-                aria-label="Ajouter une contrainte"
-                className="min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-              <button type="button" onClick={ajouterContrainte} className={btnFantome}>
-                Ajouter
-              </button>
-            </div>
+            {contraintes.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                Aucune contrainte choisie (à définir au lancement).
+              </p>
+            ) : (
+              contraintes.map((c, i) => (
+                <label
+                  key={i}
+                  className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200"
+                >
+                  <input
+                    type="checkbox"
+                    checked={c.validee}
+                    onChange={() => basculerContrainte(i)}
+                    className="h-4 w-4 rounded border-slate-300 text-principal focus:ring-principal"
+                  />
+                  <span className={c.validee ? "line-through opacity-60" : ""}>
+                    {c.label}
+                  </span>
+                </label>
+              ))
+            )}
           </div>
         </div>
 
@@ -579,18 +662,9 @@ export default function ConjugaisonEntrainement() {
         <button type="button" onClick={reinitialiser} className={btnFantome}>
           Réinitialiser
         </button>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setPhase("historique")}
-            className={btnFantome}
-          >
-            <span aria-hidden="true">📒</span> Historique
-          </button>
-          <button type="button" onClick={terminerSeance} className={btnPrincipal}>
-            Terminer la séance
-          </button>
-        </div>
+        <button type="button" onClick={terminerSeance} className={btnPrincipal}>
+          Terminer la séance
+        </button>
       </div>
     </div>
   );
