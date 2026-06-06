@@ -128,6 +128,10 @@ export default function ConjugaisonEntrainement() {
   const [eleveRoue, setEleveRoue] = useState<string | null>(null);
   const [roulette, setRoulette] = useState(false);
   const rouleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Minuteries pour vider une ligne fausse après le flash rouge (clé « t-i »).
+  const effaceursRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
   const [phrase, setPhrase] = useState("");
   const [phraseCorrigee, setPhraseCorrigee] = useState("");
   const [contraintes, setContraintes] = useState<Contrainte[]>([]);
@@ -141,10 +145,13 @@ export default function ConjugaisonEntrainement() {
     setCharge(true);
   }, []);
 
-  // Arrête l'animation de la roue si on quitte le jeu.
+  // Arrête l'animation de la roue et les minuteries d'effacement au démontage.
   useEffect(() => {
+    const effaceurs = effaceursRef.current;
     return () => {
       if (rouleRef.current) clearInterval(rouleRef.current);
+      effaceurs.forEach((minuterie) => clearTimeout(minuterie));
+      effaceurs.clear();
     };
   }, []);
 
@@ -203,6 +210,25 @@ export default function ConjugaisonEntrainement() {
           : tab,
       ),
     );
+    // Mauvaise réponse : on laisse le flash rouge, puis on vide la ligne.
+    if (!ok) {
+      const cle = `${t}-${i}`;
+      const ancien = effaceursRef.current.get(cle);
+      if (ancien) clearTimeout(ancien);
+      const minuterie = setTimeout(() => {
+        setSaisies((prev) =>
+          prev.map((tab, ti) =>
+            ti === t
+              ? tab.map((lg, li) =>
+                  li === i ? { pronom: "", forme: "", valide: null } : lg,
+                )
+              : tab,
+          ),
+        );
+        effaceursRef.current.delete(cle);
+      }, 900);
+      effaceursRef.current.set(cle, minuterie);
+    }
   }
 
   // Tire un élève au hasard avec une petite animation (les prénoms défilent).
