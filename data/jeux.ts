@@ -114,4 +114,20 @@ export const jeux: Jeu[] = [
     ],
     aide: "Choisis un thème et un mode (tour simple ou élimination) ; tire un élève au sort, valide chaque mot « Correct » ou « Hors thème ». Pensé pour le vidéoprojecteur.",
   },
+  {
+    id: "conjugaison-entrainement",
+    titre: "Conjugaison — entraînement",
+    categorie: "conjugaison",
+    type: "jouable",
+    resume: "Deux verbes au tableau",
+    icone: "📝",
+    couleur: "green",
+    duree: "20 min",
+    composant: "ConjugaisonEntrainement",
+    objectifs: [
+      "Conjuguer deux verbes à différents temps",
+      "Produire une phrase correcte sous contraintes",
+    ],
+    aide: "Choisis 2 verbes, une classe et une date. La classe complète les 2 tableaux (pronom + forme), puis rédige une phrase utilisant les deux verbes. « Terminer la séance » l'enregistre dans l'historique de la classe.",
+  },
 ];
