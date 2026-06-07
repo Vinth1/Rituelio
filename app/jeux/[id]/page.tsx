@@ -8,6 +8,7 @@ import { couleurBande } from "@/lib/couleurs";
 import { libelleCategorie } from "@/lib/categories";
 import Badge from "@/components/Badge";
 import { JEUX_JOUABLES } from "@/components/jeux/registre";
+import { sessionProf } from "@/lib/serveur/session-prof";
 
 export default async function PageJeu({
   params,
@@ -24,6 +25,10 @@ export default async function PageJeu({
   const estEleve = espace === "eleve";
   // Les jeux « prof uniquement » ne sont pas accessibles depuis l'espace élève.
   if (estEleve && jeu.profSeulement) redirect("/eleve");
+  // …ni en accès direct côté prof sans être connecté (protection serveur).
+  if (!estEleve && jeu.profSeulement && !(await sessionProf())) {
+    redirect(`/connexion?next=${encodeURIComponent(`/jeux/${jeu.id}?espace=prof`)}`);
+  }
   const retourHref = estEleve ? "/eleve" : "/prof";
   const retourLabel = estEleve ? "Retour aux jeux" : "Retour à l'espace prof";
 
@@ -50,7 +55,7 @@ export default async function PageJeu({
     <div className="mx-auto max-w-3xl px-4 py-6">
       <Link
         href={retourHref}
-        className="inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-400 dark:hover:text-slate-200"
+        className="inline-flex items-center gap-1 text-sm text-encre-douce transition hover:text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
       >
         <span aria-hidden="true">←</span> {retourLabel}
       </Link>
@@ -58,7 +63,7 @@ export default async function PageJeu({
       {!masquerEntete && (
         <>
           <div
-            className={`mt-4 flex h-28 items-center justify-center rounded-3xl text-5xl ${couleurBande(jeu.couleur)}`}
+            className={`mt-4 flex h-28 items-center justify-center rounded-carte text-5xl ${couleurBande(jeu.couleur)}`}
             aria-hidden="true"
           >
             {jeu.icone}
@@ -66,13 +71,13 @@ export default async function PageJeu({
 
           <div className="mt-4 flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h1 className="font-titre text-2xl font-bold text-encre">
                 {jeu.titre}
               </h1>
               <Badge type={jeu.type} />
             </div>
-            <p className="text-slate-600 dark:text-slate-300">{jeu.resume}</p>
-            <p className="text-sm text-slate-400">
+            <p className="text-encre-douce">{jeu.resume}</p>
+            <p className="text-sm text-encre-douce">
               Rituel : {libelleCategorie(jeu.categorie)}
               {jeu.duree ? ` · ${jeu.duree}` : ""}
             </p>
@@ -90,8 +95,8 @@ export default async function PageJeu({
           {/* Comment y jouer */}
           {jeu.materiel?.length ? (
             <section className="mt-6">
-              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Matériel</h2>
-              <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+              <h2 className="mb-2 font-titre font-semibold text-encre">Matériel</h2>
+              <ul className="list-disc space-y-1 pl-5 text-encre-douce">
                 {jeu.materiel.map((m, i) => (
                   <li key={i}>{m}</li>
                 ))}
@@ -101,8 +106,8 @@ export default async function PageJeu({
 
           {jeu.deroule?.length ? (
             <section className="mt-6">
-              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Déroulé</h2>
-              <ol className="list-decimal space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+              <h2 className="mb-2 font-titre font-semibold text-encre">Déroulé</h2>
+              <ol className="list-decimal space-y-1 pl-5 text-encre-douce">
                 {jeu.deroule.map((etape, i) => (
                   <li key={i}>{etape}</li>
                 ))}
@@ -112,8 +117,8 @@ export default async function PageJeu({
 
           {jeu.variantes?.length ? (
             <section className="mt-6">
-              <h2 className="mb-2 font-semibold text-slate-800 dark:text-slate-100">Variantes</h2>
-              <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
+              <h2 className="mb-2 font-titre font-semibold text-encre">Variantes</h2>
+              <ul className="list-disc space-y-1 pl-5 text-encre-douce">
                 {jeu.variantes.map((v, i) => (
                   <li key={i}>{v}</li>
                 ))}
@@ -122,7 +127,7 @@ export default async function PageJeu({
           ) : null}
 
           {!aDuContenu && (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+            <div className="mt-6 rounded-carte border border-dashed border-ligne bg-surface p-6 text-sm text-encre-douce">
               {jeu.type === "jouable"
                 ? "Ce jeu se joue directement dans le navigateur — le mini-jeu interactif sera ajouté plus tard."
                 : "Le déroulé détaillé de ce jeu sera ajouté bientôt."}
@@ -133,14 +138,14 @@ export default async function PageJeu({
 
       {/* Aide pédagogique : visible uniquement côté prof */}
       {montrerAide && (
-        <section className="mt-6 rounded-2xl border border-principal-clair bg-principal-clair/40 p-5 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="font-semibold text-principal-fonce dark:text-principal">
-            Plus d'infos / Aide (prof)
+        <section className="mt-6 rounded-carte border border-principal-clair bg-principal-clair/40 p-5">
+          <h2 className="font-titre font-semibold text-principal-fonce">
+            Plus d’infos / Aide (prof)
           </h2>
           {jeu.objectifs?.length ? (
             <>
-              <p className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-200">Objectifs</p>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-sm font-medium text-encre">Objectifs</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-encre-douce">
                 {jeu.objectifs.map((o, i) => (
                   <li key={i}>{o}</li>
                 ))}
@@ -149,8 +154,8 @@ export default async function PageJeu({
           ) : null}
           {jeu.aide ? (
             <>
-              <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-200">Conseils</p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{jeu.aide}</p>
+              <p className="mt-3 text-sm font-medium text-encre">Conseils</p>
+              <p className="mt-1 text-sm text-encre-douce">{jeu.aide}</p>
             </>
           ) : null}
         </section>

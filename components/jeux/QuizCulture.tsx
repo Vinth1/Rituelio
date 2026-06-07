@@ -62,8 +62,8 @@ export default function QuizCulture() {
   // ---------- Écran : choix des thèmes ----------
   if (ecran === "categories") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="mb-5 text-center text-2xl font-bold text-slate-800 dark:text-slate-100">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
+        <h2 className="mb-5 text-center font-titre text-2xl font-bold text-encre">
           Choisis un thème
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -72,7 +72,7 @@ export default function QuizCulture() {
               key={c.slug}
               type="button"
               onClick={() => demarrer(c.slug)}
-              className="group flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+              className="group flex flex-col items-center gap-2 rounded-carte p-4 text-center transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
             >
               <span
                 className={`flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-sm transition group-hover:scale-105 ${couleurBande(c.couleur)}`}
@@ -80,8 +80,8 @@ export default function QuizCulture() {
               >
                 {c.icone}
               </span>
-              <span className="text-lg font-bold text-slate-800 dark:text-slate-100">{c.label}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{c.description}</span>
+              <span className="text-lg font-bold text-encre">{c.label}</span>
+              <span className="text-xs text-encre-douce">{c.description}</span>
               <span className={`mt-1 h-1.5 w-10 rounded-full ${couleurBanniere(c.couleur)}`} aria-hidden="true" />
             </button>
           ))}
@@ -93,8 +93,8 @@ export default function QuizCulture() {
   // ---------- Écran : résultat ----------
   if (ecran === "resultat") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-800">
-        <p className="text-xl font-semibold text-slate-500 dark:text-slate-400">Ton score</p>
+      <div className="rounded-carte border border-ligne bg-surface p-8 text-center">
+        <p className="text-xl font-semibold text-encre-douce">Ton score</p>
         <p className="my-3 text-6xl font-extrabold text-principal">
           {score} / {questions.length}
         </p>
@@ -102,14 +102,14 @@ export default function QuizCulture() {
           <button
             type="button"
             onClick={recommencer}
-            className="rounded-2xl bg-principal px-6 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            className="rounded-carte bg-principal px-6 py-3 text-lg font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             Recommencer
           </button>
           <button
             type="button"
             onClick={reinitialiser}
-            className="rounded-2xl bg-white px-6 py-3 text-lg font-bold text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-slate-700 dark:text-slate-100 dark:ring-slate-600 dark:hover:bg-slate-600"
+            className="rounded-carte bg-surface px-6 py-3 text-lg font-bold text-encre ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             Choisir une autre catégorie
           </button>
@@ -126,28 +126,28 @@ export default function QuizCulture() {
     const estBonne = i === q.bonneReponse;
     const estChoisi = i === choisi;
     if (!repondu)
-      return "bg-white text-slate-800 ring-1 ring-slate-200 hover:border-principal hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-100 dark:ring-slate-600 dark:hover:bg-slate-600";
+      return "bg-surface text-encre ring-1 ring-ligne hover:border-principal hover:bg-fond";
     if (estBonne) return "bg-emerald-500 text-white ring-1 ring-emerald-500";
     if (estChoisi) return "bg-red-500 text-white ring-1 ring-red-500";
-    return "bg-white text-slate-400 ring-1 ring-slate-200 opacity-70 dark:bg-slate-700 dark:text-slate-500 dark:ring-slate-600";
+    return "bg-surface text-encre-douce ring-1 ring-ligne opacity-70";
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       <div className="mb-3 flex items-center justify-between gap-3 text-sm">
-        <span className="font-semibold text-slate-500 dark:text-slate-400">
+        <span className="font-semibold text-encre-douce">
           Question {index + 1} / {questions.length}
         </span>
         <button
           type="button"
           onClick={reinitialiser}
-          className="rounded-full px-3 py-1 font-medium text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-400 dark:ring-slate-600 dark:hover:bg-slate-700"
+          className="rounded-full px-3 py-1 font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           Réinitialiser
         </button>
       </div>
 
-      <h2 className="text-2xl font-bold leading-snug text-slate-800 sm:text-3xl dark:text-slate-100">
+      <h2 className="font-titre text-2xl font-bold leading-snug text-encre sm:text-3xl">
         {q.question}
       </h2>
 
@@ -158,7 +158,7 @@ export default function QuizCulture() {
             type="button"
             onClick={() => repondre(i)}
             disabled={repondu}
-            className={`rounded-2xl px-5 py-4 text-left text-lg font-semibold transition disabled:cursor-default sm:text-xl ${styleChoix(i)}`}
+            className={`rounded-carte px-5 py-4 text-left text-lg font-semibold transition disabled:cursor-default sm:text-xl ${styleChoix(i)}`}
           >
             {choix}
           </button>
@@ -166,7 +166,7 @@ export default function QuizCulture() {
       </div>
 
       {repondu && q.explication && (
-        <p className="mt-4 rounded-2xl bg-principal-clair p-4 text-base text-slate-700 dark:bg-principal/15 dark:text-slate-200">
+        <p className="mt-4 rounded-carte bg-principal-clair p-4 text-base text-encre">
           💡 {q.explication}
         </p>
       )}
@@ -176,7 +176,7 @@ export default function QuizCulture() {
           <button
             type="button"
             onClick={suivante}
-            className="rounded-2xl bg-principal px-6 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            className="rounded-carte bg-principal px-6 py-3 text-lg font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             {index + 1 < questions.length ? "Question suivante →" : "Voir le résultat"}
           </button>

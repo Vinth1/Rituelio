@@ -8,6 +8,7 @@ import {
   enregistrerCopie,
   type CopieEntrante,
 } from "@/lib/serveur/evaluations";
+import { refuserSiNonProf } from "@/lib/serveur/session-prof";
 
 type Ctx = { params: Promise<{ code: string }> };
 
@@ -39,6 +40,8 @@ export async function POST(request: Request, ctx: Ctx) {
 }
 
 export async function GET(_request: Request, ctx: Ctx) {
+  const refus = await refuserSiNonProf();
+  if (refus) return refus;
   const { code } = await ctx.params;
   return Response.json({ copies: copiesDe(code) });
 }

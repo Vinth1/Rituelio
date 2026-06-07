@@ -60,6 +60,20 @@ CREATE TABLE IF NOT EXISTS submission_constraints (
   label TEXT NOT NULL,
   validated INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS prof_users (
+  id TEXT PRIMARY KEY,
+  identifiant TEXT NOT NULL UNIQUE,
+  email TEXT,
+  password_hash TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS prof_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
 `;
 
 function ouvrir(): DatabaseSync {
@@ -69,6 +83,17 @@ function ouvrir(): DatabaseSync {
   base.exec("PRAGMA journal_mode = WAL;");
   base.exec("PRAGMA foreign_keys = ON;");
   base.exec(SCHEMA);
+  // Migration : la colonne `email` de prof_users a été ajoutée après coup (multi-comptes).
+  // CREATE TABLE IF NOT EXISTS ne modifie pas une table existante → on l'ajoute ici.
+  const colonnes = base
+    .prepare("PRAGMA table_info(prof_users)")
+    .all() as { name: string }[];
+  if (!colonnes.some((c) => c.name === "email")) {
+    base.exec("ALTER TABLE prof_users ADD COLUMN email TEXT");
+  }
+  base.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_prof_email ON prof_users(email)",
+  );
   return base;
 }
 

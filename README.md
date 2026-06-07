@@ -50,6 +50,29 @@ Puis ouvrir **http://localhost:3000**.
 | `npm run start` | Sert le build de production |
 | `npm run lint` | Vérifie le code (ESLint) |
 
+## Authentification prof
+
+L'**espace prof** (pages `/prof`, `/classe`, jeux réservés, et l'API des évaluations) est
+protégé **côté serveur** par un mot de passe. L'**espace élève** (`/eleve`, `/rejoindre`,
+jeux ouverts) reste librement accessible.
+
+- **Définir le mot de passe (1ʳᵉ fois)** : copier `.env.example` en `.env.local` et renseigner
+  `PROF_MOT_DE_PASSE`. Au **premier login**, ce mot de passe est haché (scrypt) et enregistré
+  dans la base (`prof_users`). Le mot de passe en clair ne quitte jamais le serveur.
+- **Changer le mot de passe ensuite** : se connecter, puis aller sur **`/prof/reglages`**
+  (lien « ⚙️ Réglages » dans l'espace prof) → le nouveau mot de passe est re-haché en base,
+  sans redémarrage.
+- **Connexion / déconnexion** : cliquer « Espace prof » ouvre un formulaire (**nom d'utilisateur
+  + mot de passe**) si l'on n'est pas connecté ; la session est maintenue par un cookie `httpOnly`
+  (30 jours) ; le bouton « Se déconnecter » apparaît dans l'en-tête une fois connecté. Le compte
+  amorcé par `PROF_MOT_DE_PASSE` a pour identifiant **`prof`**.
+- **Créer d'autres comptes** : page **`/inscription`** (email + nom d'utilisateur + mot de passe),
+  protégée par un **code d'inscription** secret (variable d'env `CLE_INSCRIPTION`). Sans cette
+  variable, l'inscription est désactivée. À la création, le compte est connecté automatiquement.
+
+> ⚠️ La base est un fichier SQLite local (`.data/`). Sur un hébergement *serverless* (Vercel),
+> ce fichier est éphémère : viser un hébergement persistant pour conserver compte et évaluations.
+
 ## Structure du projet
 
 ```

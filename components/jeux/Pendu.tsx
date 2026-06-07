@@ -48,7 +48,7 @@ function Coeur({ etat }: { etat: EtatCoeur }) {
     <span className="relative inline-block h-8 w-8" aria-hidden="true">
       <svg
         viewBox="0 0 24 24"
-        className="absolute inset-0 h-8 w-8 text-slate-300 dark:text-slate-600"
+        className="absolute inset-0 h-8 w-8 text-encre-douce"
       >
         <path d={COEUR_PATH} fill="currentColor" />
       </svg>
@@ -115,11 +115,11 @@ export default function Pendu() {
   // ---------- Phase : saisie du mot ----------
   if (phase === "saisie") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
+        <h2 className="font-titre text-2xl font-bold text-encre">
           Le pendu
         </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-encre-douce">
           Tape le mot à faire deviner : il restera caché pendant la partie.
         </p>
         <form onSubmit={lancerSaisie} className="mt-4 flex flex-wrap gap-2">
@@ -130,18 +130,18 @@ export default function Pendu() {
             onChange={(e) => setSaisie(e.target.value)}
             placeholder="Mot à deviner"
             aria-label="Mot à faire deviner"
-            className="w-full max-w-xs rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+            className="w-full max-w-xs rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           />
           <button
             type="submit"
-            className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             Lancer
           </button>
           <button
             type="button"
             onClick={motAuHasard}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             <span aria-hidden="true">🎲</span> Mot au hasard
           </button>
@@ -152,10 +152,10 @@ export default function Pendu() {
 
   // ---------- Phase : jeu ----------
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       {/* Vies */}
       <div
-        className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 ${couleurBande(ACCENT)}`}
+        className={`flex items-center justify-between gap-3 rounded-carte px-4 py-3 ${couleurBande(ACCENT)}`}
       >
         <span className="text-sm font-semibold">Vies</span>
         <span
@@ -176,7 +176,7 @@ export default function Pendu() {
             return (
               <span
                 key={i}
-                className="px-1 text-3xl font-bold text-slate-400 dark:text-slate-500"
+                className="px-1 text-3xl font-bold text-encre-douce"
               >
                 {c === " " ? "  " : c}
               </span>
@@ -191,7 +191,7 @@ export default function Pendu() {
               className={`flex h-12 w-9 items-end justify-center border-b-4 pb-1 text-3xl font-bold ${
                 manquee
                   ? "border-rose-400 text-rose-500"
-                  : "border-slate-400 text-slate-800 dark:border-slate-500 dark:text-slate-100"
+                  : "border-encre-douce text-encre"
               }`}
             >
               {revele ? c : ""}
@@ -218,19 +218,19 @@ export default function Pendu() {
           const essayee = essayees.includes(L);
           const juste = lettresDuMot.has(L);
           let style =
-            "bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-100 dark:ring-slate-600 dark:hover:bg-slate-600";
+            "bg-surface text-encre ring-1 ring-ligne hover:bg-fond";
           if (essayee && juste)
             style = "bg-emerald-500 text-white ring-1 ring-emerald-500";
           else if (essayee && !juste)
             style =
-              "bg-slate-100 text-slate-400 line-through ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:ring-slate-700";
+              "bg-fond text-encre-douce line-through ring-1 ring-ligne";
           return (
             <button
               key={L}
               type="button"
               onClick={() => essayer(L)}
               disabled={essayee || termine}
-              className={`rounded-lg py-3 text-lg font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed ${style}`}
+              className={`rounded-moyen py-3 text-lg font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed ${style}`}
             >
               {L}
             </button>
@@ -243,7 +243,7 @@ export default function Pendu() {
         <button
           type="button"
           onClick={nouveauMot}
-          className="rounded-2xl bg-principal px-6 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+          className="rounded-carte bg-principal px-6 py-3 text-lg font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           Nouveau mot
         </button>

@@ -29,13 +29,16 @@ export default function MotDuJour() {
   // Mot attribué à chaque élève, indexé par id d'élève.
   const [attributions, setAttributions] = useState<Record<string, Mot>>({});
 
-  // Chargement des classes depuis le localStorage (côté client uniquement).
+  // Chargement des classes depuis le localStorage (côté client uniquement) : initialisé
+  // dans un effet pour éviter un décalage d'hydratation (faux positif de set-state-in-effect).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
     setClasseActiveId(initiales[0]?.id ?? null);
     setCharge(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
   const eleves = classeActive?.eleves ?? [];
@@ -77,21 +80,21 @@ export default function MotDuJour() {
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       {/* Barre du haut : titre, sélecteur de classe, actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h2 className="font-titre text-2xl font-bold text-encre">
           Mot du jour
         </h2>
 
         <div className="flex flex-wrap items-center gap-2">
           {classes.length > 0 && (
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-encre-douce">
               Classe
               <select
                 value={classeActiveId ?? ""}
                 onChange={(e) => setClasseActiveId(e.target.value)}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                className="rounded-full border border-ligne bg-surface px-3 py-1.5 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -106,7 +109,7 @@ export default function MotDuJour() {
             type="button"
             onClick={donnerATous}
             disabled={eleves.length === 0}
-            className="inline-flex items-center gap-2 rounded-full bg-principal px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-principal px-4 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span aria-hidden="true">🎲</span> Donner un mot à tous
           </button>
@@ -115,7 +118,7 @@ export default function MotDuJour() {
             type="button"
             onClick={reinitialiser}
             disabled={!aDesAttributions}
-            className="rounded-full px-3 py-2 text-sm font-medium text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:ring-slate-600 dark:hover:bg-slate-700"
+            className="rounded-full px-3 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
           >
             Réinitialiser
           </button>
@@ -124,9 +127,9 @@ export default function MotDuJour() {
 
       {/* États particuliers : chargement, aucune classe, classe vide */}
       {!charge ? (
-        <p className="mt-6 text-sm text-slate-400">Chargement…</p>
+        <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
       ) : classes.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           Aucune classe pour le moment. Crée une classe et ses élèves depuis la
           page{" "}
           <Link
@@ -138,7 +141,7 @@ export default function MotDuJour() {
           .
         </p>
       ) : eleves.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           Cette classe ne contient encore aucun élève. Ajoute des élèves depuis
           la page{" "}
           <Link
@@ -157,24 +160,24 @@ export default function MotDuJour() {
             return (
               <div
                 key={eleve.id}
-                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                className="flex flex-col rounded-carte border border-ligne bg-surface p-4"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-semibold text-slate-700 dark:text-slate-200">
+                  <span className="truncate font-semibold text-encre">
                     {eleve.nom}
                   </span>
                   <button
                     type="button"
                     onClick={() => tirerPour(eleve.id)}
                     aria-label={`Tirer un mot pour ${eleve.nom}`}
-                    className="shrink-0 rounded-full px-2 py-1 text-lg ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:ring-slate-600 dark:hover:bg-slate-800"
+                    className="shrink-0 rounded-full px-2 py-1 text-lg ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                   >
                     <span aria-hidden="true">🎲</span>
                   </button>
                 </div>
 
                 <div
-                  className={`mt-3 flex min-h-24 flex-col items-center justify-center rounded-xl p-3 text-center ${couleurBande(ACCENT)}`}
+                  className={`mt-3 flex min-h-24 flex-col items-center justify-center rounded-moyen p-3 text-center ${couleurBande(ACCENT)}`}
                 >
                   {mot ? (
                     <span className="text-2xl font-bold leading-tight">

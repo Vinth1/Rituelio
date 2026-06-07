@@ -9,10 +9,10 @@ export default function EspaceEleve() {
     <div className="mx-auto max-w-4xl px-4 py-6">
       <BasculeEspace />
 
-      <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+      <h1 className="font-titre text-2xl font-bold text-encre sm:text-3xl">
         Choisis un jeu
       </h1>
-      <p className="mt-1 mb-6 text-slate-500 dark:text-slate-400">
+      <p className="mt-1 mb-6 text-encre-douce">
         Clique sur un jeu pour voir comment y jouer.
       </p>
 

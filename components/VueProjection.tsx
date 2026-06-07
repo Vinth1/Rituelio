@@ -3,6 +3,11 @@
 // Vue « affichage classe » : plein écran, fort contraste, très grands caractères,
 // pensée pour le vidéoprojecteur / TBI. Affiche le déroulé une étape à la fois
 // (navigation au clavier : ← → ou Espace) ou tout d'un coup.
+//
+// Choix : la projection force la palette « Tableau » (classe `dark` sur le
+// conteneur racine) QUEL QUE SOIT le thème de l'app — un fond crème projeté au
+// beamer fatigue les yeux et délave les couleurs. Les tokens (bg-fond, text-encre,
+// bg-surface, text-principal…) prennent donc leurs valeurs nuit dans tout ce sous-arbre.
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Jeu } from "@/data/jeux";
@@ -33,7 +38,7 @@ export default function VueProjection({ jeu }: { jeu: Jeu }) {
   }, [tout, total]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-900 text-white">
+    <div className="dark fixed inset-0 z-50 flex flex-col bg-fond text-encre">
       {/* Haut : titre + quitter */}
       <header className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10">
         <div className="flex items-center gap-3">
@@ -41,15 +46,15 @@ export default function VueProjection({ jeu }: { jeu: Jeu }) {
             {jeu.icone}
           </span>
           <div>
-            <h1 className="text-2xl font-extrabold sm:text-4xl">{jeu.titre}</h1>
+            <h1 className="font-titre text-2xl font-extrabold sm:text-4xl">{jeu.titre}</h1>
             {jeu.duree && (
-              <p className="text-sm text-slate-400 sm:text-base">⏱ {jeu.duree}</p>
+              <p className="text-sm text-encre-douce sm:text-base">⏱ {jeu.duree}</p>
             )}
           </div>
         </div>
         <Link
           href={`/jeux/${jeu.id}?espace=prof`}
-          className="shrink-0 rounded-full bg-white/10 px-5 py-2.5 text-base font-semibold transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="shrink-0 rounded-full bg-surface px-5 py-2.5 text-base font-semibold transition hover:bg-ligne focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           ✕ Quitter
         </Link>
@@ -88,7 +93,7 @@ export default function VueProjection({ jeu }: { jeu: Jeu }) {
               type="button"
               onClick={precedent}
               disabled={i === 0}
-              className="rounded-2xl bg-white/10 px-6 py-3 text-lg font-bold transition hover:bg-white/20 disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="rounded-carte bg-surface px-6 py-3 text-lg font-bold transition hover:bg-ligne disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               ← Précédent
             </button>
@@ -96,7 +101,7 @@ export default function VueProjection({ jeu }: { jeu: Jeu }) {
               type="button"
               onClick={suivant}
               disabled={i === total - 1}
-              className="rounded-2xl bg-principal px-8 py-3 text-lg font-bold text-white transition hover:bg-principal-fonce disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="rounded-carte bg-principal px-8 py-3 text-lg font-bold text-sur-principal transition hover:bg-principal-fonce disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Suivant →
             </button>
@@ -106,7 +111,7 @@ export default function VueProjection({ jeu }: { jeu: Jeu }) {
           <button
             type="button"
             onClick={() => setTout((t) => !t)}
-            className="rounded-2xl px-5 py-3 text-base font-semibold text-slate-300 ring-1 ring-white/20 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="rounded-carte px-5 py-3 text-base font-semibold text-encre-douce ring-1 ring-ligne transition hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             {tout ? "Une étape à la fois" : "Tout afficher"}
           </button>

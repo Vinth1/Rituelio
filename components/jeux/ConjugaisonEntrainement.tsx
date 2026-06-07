@@ -50,12 +50,12 @@ function TableauVerbe({
   onVerifier: (i: number) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+    <div className="rounded-carte border border-ligne p-4">
       <div className="mb-3 text-center">
-        <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
+        <p className="text-xl font-bold text-encre">
           {partie.verbe.infinitif}
         </p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-encre-douce">
           {partie.conj.temps} · {partie.conj.mode}
         </p>
       </div>
@@ -70,7 +70,7 @@ function TableauVerbe({
           return (
             <div
               key={i}
-              className={`flex items-center gap-2 rounded-lg p-1 ${fond}`}
+              className={`flex items-center gap-2 rounded-moyen p-1 ${fond}`}
             >
               <input
                 type="text"
@@ -78,7 +78,7 @@ function TableauVerbe({
                 onChange={(e) => onChange(i, "pronom", e.target.value)}
                 placeholder="pronom"
                 aria-label={`Pronom ligne ${i + 1}`}
-                className="w-20 shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                className="w-20 shrink-0 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               />
               <input
                 type="text"
@@ -86,16 +86,16 @@ function TableauVerbe({
                 onChange={(e) => onChange(i, "forme", e.target.value)}
                 placeholder="forme conjuguée"
                 aria-label={`Forme ligne ${i + 1}`}
-                className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                className="min-w-0 flex-1 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               />
               <button
                 type="button"
                 onClick={() => onVerifier(i)}
                 aria-label={`Vérifier la ligne ${i + 1}`}
-                className={`shrink-0 rounded-lg px-2 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
+                className={`shrink-0 rounded-moyen px-2 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
                   lg.valide === true
                     ? "bg-emerald-500 text-white"
-                    : "text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700"
+                    : "text-encre-douce ring-1 ring-ligne hover:bg-fond"
                 }`}
               >
                 {lg.valide === true ? "✓" : "Vérifier"}
@@ -126,6 +126,7 @@ export default function ConjugaisonEntrainement() {
   const [modeJeu, setModeJeu] = useState<ModeJeu>("entrainement");
   const [codeEval, setCodeEval] = useState<string | null>(null);
   const [creationEnCours, setCreationEnCours] = useState(false);
+  const [aideOuverte, setAideOuverte] = useState(false);
 
   // Partie en cours
   const [parties, setParties] = useState<Partie[]>([]);
@@ -141,7 +142,10 @@ export default function ConjugaisonEntrainement() {
   const [phraseCorrigee, setPhraseCorrigee] = useState("");
   const [contraintes, setContraintes] = useState<Contrainte[]>([]);
 
-  // Chargement des classes + date du jour (côté client uniquement).
+  // Chargement des classes + date du jour (côté client uniquement). Initialisé dans un
+  // effet (localStorage, date locale) pour éviter un décalage d'hydratation — faux
+  // positif de set-state-in-effect.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
@@ -149,6 +153,7 @@ export default function ConjugaisonEntrainement() {
     setDate(new Date().toISOString().slice(0, 10));
     setCharge(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Arrête l'animation de la roue et les minuteries d'effacement au démontage.
   useEffect(() => {
@@ -329,11 +334,11 @@ export default function ConjugaisonEntrainement() {
 
   // Styles de boutons partagés.
   const btnPrincipal =
-    "inline-flex items-center gap-2 rounded-full bg-principal px-5 py-2.5 text-base font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center gap-2 rounded-full bg-principal px-5 py-2.5 text-base font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
   const btnFantome =
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700";
+    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
   const champ =
-    "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100";
+    "rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal";
 
   // ---------- Écran : suivi d'une évaluation ----------
   if (phase === "suiviEval" && codeEval) {
@@ -345,24 +350,65 @@ export default function ConjugaisonEntrainement() {
   // ---------- Écran : menu ----------
   if (phase === "menu") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <h2 className="font-titre text-2xl font-bold text-encre">
             Conjugaison — entraînement
           </h2>
-          <button
-            type="button"
-            onClick={() => setPhase("historique")}
-            className={btnFantome}
-          >
-            <span aria-hidden="true">📒</span> Historique
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAideOuverte((v) => !v)}
+              aria-expanded={aideOuverte}
+              aria-label="Comment ça marche ?"
+              title="Comment ça marche ?"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-encre-douce ring-1 ring-ligne transition hover:bg-fond hover:text-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            >
+              ?
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhase("historique")}
+              className={btnFantome}
+            >
+              <span aria-hidden="true">📒</span> Historique
+            </button>
+          </div>
         </div>
 
+        {aideOuverte && (
+          <div className="mt-4 rounded-carte border border-ligne bg-fond p-4 text-sm text-encre-douce">
+            <p className="font-semibold text-encre">Comment ça marche ?</p>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5">
+              <li>
+                Choisis <strong>2 verbes</strong> (verbe + temps + mode), une{" "}
+                <strong>classe</strong> et une <strong>date</strong>. Tu peux
+                ajouter des <strong>contraintes de phrase</strong> (optionnel).
+              </li>
+              <li>
+                <strong>Entraînement</strong> : au tableau, la classe complète les
+                6 personnes (pronom + forme) de chaque verbe ; chaque ligne se
+                vérifie d’un clic (✓ vert, sinon flash rouge). La{" "}
+                <strong>roue</strong> 🎡 désigne un élève au hasard.{" "}
+                <strong>« Ma phrase »</strong> fait écrire une phrase qui utilise
+                les 2 verbes. « Terminer la séance » l’enregistre dans
+                l’<strong>historique</strong>.
+              </li>
+              <li>
+                <strong>Évaluation</strong> : « Créer l’évaluation » génère un{" "}
+                <strong>code</strong>. Les élèves vont sur{" "}
+                <strong>« Rejoindre une évaluation »</strong>, entrent le code et
+                leur prénom, remplissent les tableaux et la phrase, puis envoient
+                leur copie. Tu suis les copies en direct et tu corriges (note /20).
+              </li>
+            </ul>
+          </div>
+        )}
+
         {!charge ? (
-          <p className="mt-6 text-sm text-slate-400">Chargement…</p>
+          <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
         ) : classes.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
             Aucune classe pour le moment. Crée une classe et ses élèves depuis la
             page{" "}
             <Link
@@ -375,7 +421,7 @@ export default function ConjugaisonEntrainement() {
           </p>
         ) : (
           <div className="mt-6 flex flex-col gap-5">
-            <div className="inline-flex self-start rounded-full bg-slate-100 p-1 dark:bg-slate-700">
+            <div className="inline-flex self-start rounded-full bg-fond p-1">
               {(["entrainement", "evaluation"] as const).map((m) => (
                 <button
                   key={m}
@@ -383,8 +429,8 @@ export default function ConjugaisonEntrainement() {
                   onClick={() => setModeJeu(m)}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
                     modeJeu === m
-                      ? "bg-white text-principal shadow-sm dark:bg-slate-800"
-                      : "text-slate-500 dark:text-slate-300"
+                      ? "bg-surface text-principal shadow-sm"
+                      : "text-encre-douce"
                   }`}
                 >
                   {m === "entrainement" ? "Entraînement" : "Évaluation"}
@@ -399,9 +445,9 @@ export default function ConjugaisonEntrainement() {
                 return (
                   <div
                     key={slot}
-                    className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
+                    className="rounded-carte border border-ligne p-4"
                   >
-                    <p className="mb-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <p className="mb-2 text-sm font-semibold text-encre-douce">
                       Verbe {slot + 1}
                     </p>
                     <select
@@ -444,7 +490,7 @@ export default function ConjugaisonEntrainement() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
                 Classe
                 <select
                   value={classeId ?? ""}
@@ -458,7 +504,7 @@ export default function ConjugaisonEntrainement() {
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
                 Date
                 <input
                   type="date"
@@ -471,7 +517,7 @@ export default function ConjugaisonEntrainement() {
 
             {/* Contraintes de phrase : liste déroulante + saisie manuelle */}
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              <p className="text-sm font-medium text-encre-douce">
                 Contraintes de phrase (optionnel)
               </p>
               <div className="flex flex-wrap gap-2">
@@ -515,14 +561,14 @@ export default function ConjugaisonEntrainement() {
                   {contraintesChoisies.map((c, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                      className="inline-flex items-center gap-1 rounded-full bg-fond px-3 py-1 text-sm text-encre"
                     >
                       {c}
                       <button
                         type="button"
                         onClick={() => retirerContrainteChoisie(i)}
                         aria-label={`Retirer ${c}`}
-                        className="text-slate-400 transition hover:text-rose-500"
+                        className="text-encre-douce transition hover:text-rose-500"
                       >
                         ×
                       </button>
@@ -561,9 +607,9 @@ export default function ConjugaisonEntrainement() {
   if (phase === "historique") {
     const seances = classeId ? seancesDeClasse(classeId) : [];
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <h2 className="font-titre text-2xl font-bold text-encre">
             Historique des séances
           </h2>
           <button
@@ -576,7 +622,7 @@ export default function ConjugaisonEntrainement() {
         </div>
 
         {classes.length > 0 && (
-          <label className="mt-4 flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <label className="mt-4 flex items-center gap-2 text-sm font-medium text-encre-douce">
             Classe
             <select
               value={classeId ?? ""}
@@ -593,7 +639,7 @@ export default function ConjugaisonEntrainement() {
         )}
 
         {seances.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
             Aucune séance enregistrée pour cette classe.
           </p>
         ) : (
@@ -601,23 +647,23 @@ export default function ConjugaisonEntrainement() {
             {seances.map((s) => (
               <div
                 key={s.id}
-                className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
+                className="rounded-carte border border-ligne p-4"
               >
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-semibold text-encre-douce">
                   {s.date}
                 </p>
-                <p className="mt-1 font-bold text-slate-800 dark:text-slate-100">
+                <p className="mt-1 font-bold text-encre">
                   {s.tableaux
                     .map((t) => `${t.infinitif} (${t.temps})`)
                     .join("  ·  ")}
                 </p>
                 {s.contraintesValidees.length > 0 && (
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 text-sm text-encre-douce">
                     Contraintes : {s.contraintesValidees.join(", ")}
                   </p>
                 )}
                 {s.phraseCorrigee && (
-                  <p className="mt-2 rounded-lg bg-slate-50 p-2 text-sm italic text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                  <p className="mt-2 rounded-moyen bg-fond p-2 text-sm italic text-encre">
                     « {s.phraseCorrigee} »
                   </p>
                 )}
@@ -631,17 +677,17 @@ export default function ConjugaisonEntrainement() {
 
   // ---------- Écran : jeu ----------
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h2 className="font-titre text-2xl font-bold text-encre">
           Conjugaison — entraînement
         </h2>
-        <span className="text-sm text-slate-500 dark:text-slate-400">{date}</span>
+        <span className="text-sm text-encre-douce">{date}</span>
       </div>
 
       {/* Roue */}
       <div
-        className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 ${couleurBande(ACCENT)}`}
+        className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-carte px-5 py-4 ${couleurBande(ACCENT)}`}
       >
         <p
           className={`text-4xl font-extrabold transition ${roulette ? "animate-pulse" : ""}`}
@@ -672,9 +718,9 @@ export default function ConjugaisonEntrainement() {
       </div>
 
       {/* Ma phrase */}
-      <div className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-        <h3 className="font-bold text-slate-800 dark:text-slate-100">Ma phrase</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+      <div className="mt-6 rounded-carte border border-ligne p-4">
+        <h3 className="font-titre font-bold text-encre">Ma phrase</h3>
+        <p className="text-sm text-encre-douce">
           Une phrase qui utilise les deux verbes.
         </p>
         <div className="mt-3 grid gap-4 md:grid-cols-2">
@@ -684,27 +730,27 @@ export default function ConjugaisonEntrainement() {
             rows={4}
             placeholder="Écris la phrase de la classe…"
             aria-label="Phrase de la classe"
-            className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+            className="w-full rounded-carte border border-ligne bg-surface px-3 py-2 text-base text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           />
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+            <p className="text-sm font-semibold text-encre-douce">
               Contraintes
             </p>
             {contraintes.length === 0 ? (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-encre-douce">
                 Aucune contrainte choisie (à définir au lancement).
               </p>
             ) : (
               contraintes.map((c, i) => (
                 <label
                   key={i}
-                  className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200"
+                  className="flex items-center gap-2 text-sm text-encre"
                 >
                   <input
                     type="checkbox"
                     checked={c.validee}
                     onChange={() => basculerContrainte(i)}
-                    className="h-4 w-4 rounded border-slate-300 text-principal focus:ring-principal"
+                    className="h-4 w-4 rounded border-ligne text-principal focus:ring-principal"
                   />
                   <span className={c.validee ? "line-through opacity-60" : ""}>
                     {c.label}
@@ -716,7 +762,7 @@ export default function ConjugaisonEntrainement() {
         </div>
 
         <div className="mt-4">
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+          <p className="text-sm font-semibold text-encre-douce">
             Phrase corrigée (à recopier)
           </p>
           <textarea
@@ -725,7 +771,7 @@ export default function ConjugaisonEntrainement() {
             rows={2}
             placeholder="La version validée, en grand pour la recopie…"
             aria-label="Phrase corrigée"
-            className="mt-1 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xl font-semibold text-slate-800 placeholder:text-base placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+            className="mt-1 w-full rounded-carte border border-ligne bg-surface px-4 py-3 text-xl font-semibold text-encre placeholder:text-base placeholder:font-normal placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           />
         </div>
       </div>
