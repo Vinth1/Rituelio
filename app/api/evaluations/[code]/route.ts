@@ -4,6 +4,7 @@
 export const dynamic = "force-dynamic";
 
 import { evaluationParCode, terminer } from "@/lib/serveur/evaluations";
+import { refuserSiNonProf } from "@/lib/serveur/session-prof";
 
 type Ctx = { params: Promise<{ code: string }> };
 
@@ -17,6 +18,8 @@ export async function GET(_request: Request, ctx: Ctx) {
 }
 
 export async function PATCH(request: Request, ctx: Ctx) {
+  const refus = await refuserSiNonProf();
+  if (refus) return refus;
   const { code } = await ctx.params;
   const body = (await request.json().catch(() => null)) as {
     statut?: string;

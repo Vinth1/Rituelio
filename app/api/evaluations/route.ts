@@ -8,6 +8,7 @@ import {
   evaluationsDeClasse,
   type VerbeRef,
 } from "@/lib/serveur/evaluations";
+import { refuserSiNonProf } from "@/lib/serveur/session-prof";
 
 type CorpsCreation = {
   name?: string;
@@ -19,6 +20,8 @@ type CorpsCreation = {
 };
 
 export async function POST(request: Request) {
+  const refus = await refuserSiNonProf();
+  if (refus) return refus;
   const body = (await request.json().catch(() => null)) as CorpsCreation | null;
   if (!body || !Array.isArray(body.verbes) || body.verbes.length === 0) {
     return Response.json({ erreur: "Données invalides" }, { status: 400 });
@@ -42,6 +45,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const refus = await refuserSiNonProf();
+  if (refus) return refus;
   const classeId = new URL(request.url).searchParams.get("classeId");
   if (!classeId) {
     return Response.json({ erreur: "classeId requis" }, { status: 400 });

@@ -8,10 +8,13 @@ import {
   fixerCommentaire,
   forcerNote,
 } from "@/lib/serveur/evaluations";
+import { refuserSiNonProf } from "@/lib/serveur/session-prof";
 
 type Ctx = { params: Promise<{ code: string; id: string }> };
 
 export async function PATCH(request: Request, ctx: Ctx) {
+  const refus = await refuserSiNonProf();
+  if (refus) return refus;
   const { id } = await ctx.params;
   const body = (await request.json().catch(() => null)) as {
     contraintesValidees?: string[];
