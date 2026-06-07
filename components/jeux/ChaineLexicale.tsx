@@ -49,13 +49,16 @@ export default function ChaineLexicale() {
   const [elimines, setElimines] = useState<string[]>([]); // élimination : élèves sortis
   const [saisie, setSaisie] = useState("");
 
-  // Chargement des classes depuis le localStorage (côté client uniquement).
+  // Chargement des classes depuis le localStorage (côté client uniquement) : initialisé
+  // dans un effet pour éviter un décalage d'hydratation (faux positif de set-state-in-effect).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
     setClasseActiveId(initiales[0]?.id ?? null);
     setCharge(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // --- Dérivés ---
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
@@ -138,25 +141,25 @@ export default function ChaineLexicale() {
 
   // Styles de boutons partagés.
   const btnPrincipal =
-    "inline-flex items-center gap-2 rounded-full bg-principal px-5 py-2.5 text-base font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center gap-2 rounded-full bg-principal px-5 py-2.5 text-base font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
   const btnFantome =
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700";
+    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
 
   // ---------- Écran : lancement ----------
   if (phase === "lancement") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
+        <h2 className="font-titre text-2xl font-bold text-encre">
           Chaîne lexicale
         </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-encre-douce">
           Choisis une classe, un thème, puis lance la partie.
         </p>
 
         {!charge ? (
-          <p className="mt-6 text-sm text-slate-400">Chargement…</p>
+          <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
         ) : classes.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
             Aucune classe pour le moment. Crée une classe et ses élèves depuis la
             page{" "}
             <Link
@@ -169,12 +172,12 @@ export default function ChaineLexicale() {
           </p>
         ) : (
           <div className="mt-6 flex flex-col gap-4">
-            <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
               Classe
               <select
                 value={classeActiveId ?? ""}
                 onChange={(e) => setClasseActiveId(e.target.value)}
-                className="max-w-sm rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                className="max-w-sm rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               >
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -184,12 +187,12 @@ export default function ChaineLexicale() {
               </select>
             </label>
 
-            <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+            <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
               Thème
               <select
                 value={themeId}
                 onChange={(e) => setThemeId(e.target.value)}
-                className="max-w-sm rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                className="max-w-sm rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               >
                 {champsLexicaux.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -199,18 +202,18 @@ export default function ChaineLexicale() {
               </select>
             </label>
 
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-encre">
               <input
                 type="checkbox"
                 checked={modeElimination}
                 onChange={(e) => setModeElimination(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-principal focus:ring-principal"
+                className="h-4 w-4 rounded border-ligne text-principal focus:ring-principal"
               />
               Mode élimination
             </label>
 
             {eleves.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <p className="rounded-carte border border-dashed border-ligne p-4 text-center text-sm text-encre-douce">
                 Cette classe ne contient encore aucun élève. Ajoute des élèves
                 depuis la page{" "}
                 <Link
@@ -245,30 +248,30 @@ export default function ChaineLexicale() {
           )
         : null;
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-carte border border-ligne bg-surface p-8 text-center">
         {modeElimination ? (
           <>
-            <p className="text-xl font-semibold text-slate-500 dark:text-slate-400">
+            <p className="text-xl font-semibold text-encre-douce">
               Vainqueur
             </p>
             <p className="my-3 text-5xl font-extrabold text-principal">
               {vainqueur ? vainqueur.nom : "—"}
             </p>
             {vainqueur && (
-              <p className="text-lg text-slate-600 dark:text-slate-300">
+              <p className="text-lg text-encre-douce">
                 {motsCorrectsDe(vainqueur.id)} mot(s) correct(s) donné(s)
               </p>
             )}
           </>
         ) : (
           <>
-            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            <p className="font-titre text-2xl font-bold text-encre">
               Tout le monde est passé
             </p>
             <p className="my-3 text-6xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {nbCorrects}
             </p>
-            <p className="text-lg text-slate-600 dark:text-slate-300">
+            <p className="text-lg text-encre-douce">
               mots du champ lexical trouvés
             </p>
           </>
@@ -284,9 +287,9 @@ export default function ChaineLexicale() {
 
   // ---------- Écran : jeu ----------
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       {/* Thème */}
-      <div className={`rounded-2xl px-5 py-4 text-center ${couleurBande(ACCENT)}`}>
+      <div className={`rounded-carte px-5 py-4 text-center ${couleurBande(ACCENT)}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
           Thème
         </p>
@@ -295,17 +298,17 @@ export default function ChaineLexicale() {
 
       {/* Au tour de + élève suivant */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <p className="text-2xl font-bold text-encre">
           Au tour de :{" "}
           {eleveCourant ? (
             <span className="text-principal">{eleveCourant.nom}</span>
           ) : (
-            <span className="text-slate-400">à toi de tirer</span>
+            <span className="text-encre-douce">à toi de tirer</span>
           )}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {modeElimination && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            <span className="rounded-full bg-fond px-3 py-1 text-sm font-semibold text-encre-douce">
               En lice : {enLice.length}
             </span>
           )}
@@ -330,7 +333,7 @@ export default function ChaineLexicale() {
           disabled={!eleveCourant}
           placeholder="Mot proposé par l'élève"
           aria-label="Mot proposé par l'élève"
-          className="min-w-48 flex-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+          className="min-w-48 flex-1 rounded-full border border-ligne bg-surface px-4 py-2.5 text-lg text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
           type="submit"
@@ -356,7 +359,7 @@ export default function ChaineLexicale() {
 
       {/* La chaîne + compteur */}
       <div className="mt-5 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+        <span className="text-sm font-semibold text-encre-douce">
           La chaîne
         </span>
         <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
@@ -364,7 +367,7 @@ export default function ChaineLexicale() {
         </span>
       </div>
       {mots.length === 0 ? (
-        <p className="mt-2 rounded-2xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-2 rounded-carte border border-dashed border-ligne p-4 text-center text-sm text-encre-douce">
           Aucun mot pour le moment.
         </p>
       ) : (

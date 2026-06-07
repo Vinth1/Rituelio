@@ -3,19 +3,113 @@
 /* Mode sombre piloté par une classe « dark » sur <html> (posée par next-themes). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Couleur principale de la marque : turquoise (réutilisable : bg-principal,
-   text-principal, ring-principal, border-principal, bg-principal-clair…). */
+/* ───────────────────────────────────────────────────────────────────────────
+   Tokens sémantiques du design system.
+   Bloc @theme NON-inline : Tailwind émet une vraie variable CSS dans :root ET
+   génère l'utilitaire correspondant (bg-fond, text-encre, rounded-carte,
+   font-titre…). Les valeurs ici = mode JOUR (« Bonbon Pop »). Le bloc .dark plus
+   bas surcharge ces variables en mode NUIT (« Tableau ») via la cascade.
+   NE PAS passer ces tokens en @theme inline : l'inline figerait la valeur au
+   build et casserait le basculement clair/sombre.
+   ─────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-principal: #14b8a6; /* turquoise (= teal-500) */
-  --color-principal-fonce: #0f766e; /* survol / texte foncé (teal-700) */
-  --color-principal-clair: #ccfbf1; /* fonds légers (teal-100) */
+  /* Couleurs — mode jour « Bonbon Pop » */
+  --color-fond: #fbf7f2; /* fond de page (crème chaleureux) */
+  --color-surface: #ffffff; /* cartes, en-tête, barres */
+  --color-encre: #26314f; /* texte principal */
+  --color-encre-douce: #5f6b7a; /* texte secondaire (assombri pour AA ≥ 4.5:1 sur le fond crème) */
+  --color-principal: #15a88f; /* accent marque (turquoise) */
+  --color-principal-fonce: #0d8064; /* survol / texte accent */
+  --color-principal-clair: #d9f6ec; /* fonds doux accent / badge */
+  --color-sur-principal: #ffffff; /* texte posé SUR l'accent */
+  --color-accent: #ef7d12; /* accent chaud (bannière) */
+  --color-ligne: #efe7dc; /* bordures, séparateurs */
+  --color-badge: #d9f6ec; /* fond pastille « Jouable » */
+  --color-badge-encre: #0d8064; /* texte pastille */
+
+  /* Rayons — génèrent rounded-carte / rounded-moyen (namespace --radius-*) */
+  --radius-carte: 24px; /* coins cartes / bannière */
+  --radius-moyen: 16px; /* coins boutons / pastilles */
+
+  /* Polices — basculent vers les polices de nuit sous .dark */
+  --font-titre: var(--font-fredoka); /* police d'affichage */
+  --font-corps: var(--font-nunito); /* police de lecture */
+
+  /* Décors (utilisés via var() : fond bannière + texture de page) */
+  --degrade-banniere: linear-gradient(135deg, #ff9233, #e8650b);
+  --texture-fond: radial-gradient(
+      circle at 12% 18%,
+      rgba(21, 168, 143, 0.06),
+      transparent 38%
+    ),
+    radial-gradient(circle at 88% 8%, rgba(239, 125, 18, 0.07), transparent 34%);
 }
 
-/* La police arrondie (Nunito) est injectée par next/font via --font-nunito. */
+/* Surcharges mode NUIT « Tableau » : ardoise vert sombre, craie jaune/orange,
+   coins moins arrondis, polices manuscrites. Bloc CSS normal → la cascade
+   remplace les valeurs de :root dans tout le sous-arbre .dark. */
+.dark {
+  --color-fond: #1c3b32;
+  --color-surface: #234a3f;
+  --color-encre: #f4f1e6;
+  --color-encre-douce: #a7c0b5;
+  --color-principal: #f4d35e; /* craie jaune */
+  --color-principal-fonce: #e9bf3f;
+  --color-principal-clair: #2f5a4d;
+  --color-sur-principal: #27331f;
+  --color-accent: #ee964b;
+  --color-ligne: #356257;
+  --color-badge: #2f5a4d;
+  --color-badge-encre: #f4d35e;
+
+  --radius-carte: 14px;
+  --radius-moyen: 10px;
+
+  --font-titre: var(--font-gochi);
+  --font-corps: var(--font-quicksand);
+
+  --degrade-banniere: linear-gradient(135deg, #ee964b, #cf6f2a);
+  --texture-fond: radial-gradient(
+      circle at 30% 20%,
+      rgba(255, 255, 255, 0.04),
+      transparent 40%
+    ),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.03), transparent 40%);
+}
+
+/* La police arrondie (Nunito) est injectée par next/font via --font-nunito.
+   Conservé pour rétro-compat (utilitaire font-sans) ; le switch de thème passe
+   désormais par --font-corps / --font-titre. */
 @theme inline {
   --font-sans: var(--font-nunito);
 }
 
+/* Source de vérité unique pour fond + texte + texture de la page. */
 body {
-  font-family: var(--font-sans), system-ui, Arial, Helvetica, sans-serif;
+  font-family: var(--font-corps), system-ui, sans-serif;
+  background-color: var(--color-fond);
+  background-image: var(--texture-fond);
+  color: var(--color-encre);
+}
+
+/* Transition douce au changement de thème, désactivée si l'utilisateur préfère
+   réduire les animations. */
+@media (prefers-reduced-motion: no-preference) {
+  body {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+}
+
+/* Accessibilité : neutralise transitions et animations pour les utilisateurs qui
+   préfèrent réduire les mouvements (couvre les transitions de survol et
+   l'animation de la roue « conjugaison »). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

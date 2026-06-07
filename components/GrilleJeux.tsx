@@ -1,8 +1,6 @@
-// Grille responsive de cartes : reçoit la liste (déjà filtrée) de jeux à
-// afficher, suivie de la carte « + Nouveau jeu ».
+// Grille responsive de cartes : reçoit la liste (déjà filtrée) de jeux à afficher.
 import type { Jeu } from "@/data/jeux";
 import CarteJeu from "./CarteJeu";
-import CarteNouveauJeu from "./CarteNouveauJeu";
 
 export default function GrilleJeux({ jeux }: { jeux: Jeu[] }) {
   return (
@@ -10,7 +8,6 @@ export default function GrilleJeux({ jeux }: { jeux: Jeu[] }) {
       {jeux.map((jeu) => (
         <CarteJeu key={jeu.id} jeu={jeu} />
       ))}
-      <CarteNouveauJeu />
     </div>
   );
 }

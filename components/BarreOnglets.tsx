@@ -31,8 +31,8 @@ export default function BarreOnglets({ categories, active, onChange }: Props) {
             onClick={() => onChange(o.cle)}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
               actif
-                ? "bg-principal text-white shadow-sm"
-                : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700"
+                ? "bg-principal text-sur-principal shadow-sm"
+                : "bg-surface text-encre ring-1 ring-ligne hover:bg-fond"
             }`}
           >
             <span aria-hidden="true">{o.icone}</span>

@@ -6,9 +6,10 @@ import type { Jeu } from "@/data/jeux";
 export default function Badge({ type }: { type: Jeu["type"] }) {
   const estJouable = type === "jouable";
 
+  // « Jouable » utilise l'accent badge du thème ; « Fiche » reste neutre (fond doux).
   const style = estJouable
-    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
+    ? "bg-badge text-badge-encre"
+    : "bg-fond text-encre-douce";
 
   return (
     <span

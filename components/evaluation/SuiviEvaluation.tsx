@@ -91,10 +91,10 @@ export default function SuiviEvaluation({
   }
 
   const btnFantome =
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700";
+    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal";
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={onRetour} className={btnFantome}>
           <span aria-hidden="true">←</span> Retour
@@ -103,7 +103,7 @@ export default function SuiviEvaluation({
           className={`rounded-full px-3 py-1 text-sm font-semibold ${
             status === "ouverte"
               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200"
-              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+              : "bg-fond text-encre-douce"
           }`}
         >
           {status === "ouverte" ? "Ouverte" : "Terminée"}
@@ -111,21 +111,21 @@ export default function SuiviEvaluation({
       </div>
 
       {/* Code à donner aux élèves */}
-      <div className="mt-4 rounded-2xl bg-principal-clair p-5 text-center dark:bg-principal/15">
-        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+      <div className="mt-4 rounded-carte bg-principal-clair p-5 text-center">
+        <p className="text-sm font-semibold text-encre-douce">
           Code à donner aux élèves
         </p>
         <p className="my-1 text-5xl font-extrabold tracking-wider text-principal">
           {code}
         </p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-encre-douce">
           Les élèves vont sur « Rejoindre une évaluation » et entrent ce code.
         </p>
       </div>
 
       {/* Barre d'état + terminer */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+        <span className="text-sm font-semibold text-encre-douce">
           {copies.length} copie{copies.length > 1 ? "s" : ""} reçue
           {copies.length > 1 ? "s" : ""}
           {status === "ouverte" ? " · actualisation automatique" : ""}
@@ -134,7 +134,7 @@ export default function SuiviEvaluation({
           <button
             type="button"
             onClick={terminer}
-            className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             Terminer cette évaluation
           </button>
@@ -143,9 +143,9 @@ export default function SuiviEvaluation({
 
       {/* Liste des copies */}
       {chargement ? (
-        <p className="mt-6 text-sm text-slate-400">Chargement…</p>
+        <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
       ) : copies.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           En attente des copies des élèves…
         </p>
       ) : (
@@ -155,7 +155,7 @@ export default function SuiviEvaluation({
             return (
               <div
                 key={copie.id}
-                className="rounded-2xl border border-slate-200 dark:border-slate-700"
+                className="rounded-carte border border-ligne"
               >
                 {/* Ligne résumé */}
                 <button
@@ -163,17 +163,17 @@ export default function SuiviEvaluation({
                   onClick={() => setOuverteId(ouverte ? null : copie.id)}
                   className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                 >
-                  <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                  <span className="text-lg font-bold text-encre">
                     {copie.prenom}
                   </span>
                   <span className="flex items-center gap-4 text-sm">
-                    <span className="text-slate-500 dark:text-slate-400">
+                    <span className="text-encre-douce">
                       {copie.formesCorrectes}/12 formes
                     </span>
                     <span className="text-xl font-extrabold text-principal">
                       {copie.note}/20
                     </span>
-                    <span aria-hidden="true" className="text-slate-400">
+                    <span aria-hidden="true" className="text-encre-douce">
                       {ouverte ? "▲" : "▼"}
                     </span>
                   </span>
@@ -181,16 +181,16 @@ export default function SuiviEvaluation({
 
                 {/* Détail / correction */}
                 {ouverte && (
-                  <div className="border-t border-slate-200 p-4 dark:border-slate-700">
+                  <div className="border-t border-ligne p-4">
                     <div className="grid gap-3 sm:grid-cols-2">
                       {copie.tableaux.map((tab, ti) => (
                         <div
                           key={ti}
-                          className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+                          className="rounded-moyen border border-ligne p-3"
                         >
-                          <p className="font-bold text-slate-800 dark:text-slate-100">
+                          <p className="font-bold text-encre">
                             {tab.verbe.infinitif}{" "}
-                            <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+                            <span className="text-sm font-normal text-encre-douce">
                               {tab.verbe.temps} · {tab.verbe.mode}
                             </span>
                           </p>
@@ -204,7 +204,7 @@ export default function SuiviEvaluation({
                                     : "text-rose-700 dark:text-rose-300"
                                 }`}
                               >
-                                <span className="w-14 shrink-0 text-slate-500 dark:text-slate-400">
+                                <span className="w-14 shrink-0 text-encre-douce">
                                   {lg.pronom || "—"}
                                 </span>
                                 <span className="font-semibold">
@@ -214,7 +214,7 @@ export default function SuiviEvaluation({
                                   {lg.correcte ? "✓" : "✗"}
                                 </span>
                                 {!lg.correcte && (
-                                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                                  <span className="text-xs text-encre-douce">
                                     (attendu : {lg.attendue})
                                   </span>
                                 )}
@@ -226,7 +226,7 @@ export default function SuiviEvaluation({
                     </div>
 
                     {/* Phrase */}
-                    <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <p className="mt-3 rounded-moyen bg-fond p-3 text-sm text-encre">
                       <span className="font-semibold">Phrase : </span>
                       {copie.phrase ? `« ${copie.phrase} »` : "—"}
                     </p>
@@ -234,20 +234,20 @@ export default function SuiviEvaluation({
                     {/* Contraintes */}
                     {copie.contraintes.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        <p className="text-sm font-semibold text-encre-douce">
                           Contraintes respectées
                         </p>
                         <div className="mt-1 flex flex-col gap-1">
                           {copie.contraintes.map((c, i) => (
                             <label
                               key={i}
-                              className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200"
+                              className="flex items-center gap-2 text-sm text-encre"
                             >
                               <input
                                 type="checkbox"
                                 checked={c.validee}
                                 onChange={() => basculerContrainte(copie, c.label)}
-                                className="h-4 w-4 rounded border-slate-300 text-principal focus:ring-principal"
+                                className="h-4 w-4 rounded border-ligne text-principal focus:ring-principal"
                               />
                               {c.label}
                             </label>
@@ -258,7 +258,7 @@ export default function SuiviEvaluation({
 
                     {/* Commentaire + note */}
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <label className="flex flex-col gap-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      <label className="flex flex-col gap-1 text-sm font-semibold text-encre-douce">
                         Commentaire
                         <textarea
                           key={`com-${copie.id}`}
@@ -267,10 +267,10 @@ export default function SuiviEvaluation({
                             patchCopie(copie.id, { commentaire: e.target.value })
                           }
                           rows={2}
-                          className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-normal text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                          className="rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm font-normal text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                         />
                       </label>
-                      <label className="flex flex-col gap-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      <label className="flex flex-col gap-1 text-sm font-semibold text-encre-douce">
                         Forcer la note /20 (laisser vide = note auto)
                         <input
                           key={`note-${copie.id}`}
@@ -286,17 +286,17 @@ export default function SuiviEvaluation({
                                   : Number(e.target.value),
                             })
                           }
-                          className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-normal text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                          className="w-28 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm font-normal text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                         />
                       </label>
                     </div>
 
-                    <p className="mt-3 text-right text-sm text-slate-600 dark:text-slate-300">
+                    <p className="mt-3 text-right text-sm text-encre-douce">
                       Note finale :{" "}
                       <span className="text-xl font-extrabold text-principal">
                         {copie.note}/20
                       </span>{" "}
-                      <span className="text-slate-400">
+                      <span className="text-encre-douce">
                         (auto {copie.noteAuto}, brut {copie.brut}/{copie.max})
                       </span>
                     </p>
@@ -309,7 +309,7 @@ export default function SuiviEvaluation({
       )}
 
       {evaluation && (
-        <p className="mt-4 text-center text-xs text-slate-400">
+        <p className="mt-4 text-center text-xs text-encre-douce">
           {evaluation.verbes
             .map((v) => `${v.infinitif} (${v.temps})`)
             .join("  ·  ")}

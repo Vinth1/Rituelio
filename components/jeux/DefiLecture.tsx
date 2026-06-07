@@ -34,7 +34,10 @@ export default function DefiLecture() {
   const [statuts, setStatuts] = useState<Record<string, Statut>>({});
   const [ttsDispo, setTtsDispo] = useState(false);
 
-  // Chargement des classes + détection de la synthèse vocale (côté client).
+  // Chargement des classes + détection de la synthèse vocale (côté client). Initialisé
+  // dans un effet (localStorage, détection navigateur, index aléatoire) pour éviter un
+  // décalage d'hydratation — faux positif de set-state-in-effect.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
@@ -43,6 +46,7 @@ export default function DefiLecture() {
     setDefiIndex(tirerIndexAleatoire(defis.length));
     setCharge(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Couper toute lecture en cours quand on quitte le jeu.
   useEffect(() => {
@@ -100,19 +104,19 @@ export default function DefiLecture() {
 
   // Styles communs de boutons.
   const btnPrincipal =
-    "inline-flex items-center gap-2 rounded-full bg-principal px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center gap-2 rounded-full bg-principal px-4 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
   const btnFantome =
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:ring-slate-600 dark:hover:bg-slate-700";
+    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       {/* Barre du haut : titre + sélecteur de classe */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h2 className="font-titre text-2xl font-bold text-encre">
           Défi lecture
         </h2>
         {classes.length > 0 && (
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <label className="flex items-center gap-2 text-sm font-medium text-encre-douce">
             Classe
             <select
               value={classeActiveId ?? ""}
@@ -120,7 +124,7 @@ export default function DefiLecture() {
                 setClasseActiveId(e.target.value);
                 setEleveDesigneId(null);
               }}
-              className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+              className="rounded-full border border-ligne bg-surface px-3 py-1.5 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -135,7 +139,7 @@ export default function DefiLecture() {
       {/* Bloc « Défi du jour » (indépendant de la classe) */}
       <div className="mt-6">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+          <span className="text-sm font-semibold text-encre-douce">
             Défi du jour
           </span>
           {defi.son && (
@@ -147,7 +151,7 @@ export default function DefiLecture() {
           )}
         </div>
         <div
-          className={`flex flex-col items-center justify-center rounded-2xl p-6 text-center ${couleurBande(ACCENT)}`}
+          className={`flex flex-col items-center justify-center rounded-carte p-6 text-center ${couleurBande(ACCENT)}`}
         >
           <p className="text-2xl font-bold leading-snug sm:text-3xl">
             {defi.texte}
@@ -175,9 +179,9 @@ export default function DefiLecture() {
 
       {/* Tirage + validation + bande de la classe */}
       {!charge ? (
-        <p className="mt-6 text-sm text-slate-400">Chargement…</p>
+        <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
       ) : classes.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           Aucune classe pour le moment. Crée une classe et ses élèves depuis la
           page{" "}
           <Link
@@ -189,7 +193,7 @@ export default function DefiLecture() {
           .
         </p>
       ) : eleves.length === 0 ? (
-        <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           Cette classe ne contient encore aucun élève. Ajoute des élèves depuis
           la page{" "}
           <Link
@@ -203,13 +207,13 @@ export default function DefiLecture() {
       ) : (
         <>
           {/* Zone de tirage */}
-          <div className="mt-6 rounded-2xl border border-slate-200 p-5 text-center dark:border-slate-700">
+          <div className="mt-6 rounded-carte border border-ligne p-5 text-center">
             {eleveDesigne ? (
               <>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-encre-douce">
                   Au tour de
                 </p>
-                <p className="my-2 text-4xl font-extrabold text-slate-800 dark:text-slate-100">
+                <p className="my-2 text-4xl font-extrabold text-encre">
                   {eleveDesigne.nom}
                 </p>
                 <div className="mt-3 flex flex-wrap justify-center gap-3">
@@ -231,7 +235,7 @@ export default function DefiLecture() {
               </>
             ) : tousPasses ? (
               <>
-                <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+                <p className="text-lg font-semibold text-encre">
                   Tout le monde est passé <span aria-hidden="true">🎉</span>
                 </p>
                 <button
@@ -246,7 +250,7 @@ export default function DefiLecture() {
               <button
                 type="button"
                 onClick={tirerEleve}
-                className="inline-flex items-center gap-2 rounded-full bg-principal px-6 py-3 text-base font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                className="inline-flex items-center gap-2 rounded-full bg-principal px-6 py-3 text-base font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               >
                 <span aria-hidden="true">🎲</span> Tirer un élève
               </button>
@@ -256,14 +260,14 @@ export default function DefiLecture() {
           {/* Bande de la classe */}
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              <span className="text-sm font-semibold text-encre-douce">
                 La classe
               </span>
               <button
                 type="button"
                 onClick={reinitialiser}
                 disabled={!aDuSuivi}
-                className="rounded-full px-3 py-1 text-sm font-medium text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:ring-slate-600 dark:hover:bg-slate-700"
+                className="rounded-full px-3 py-1 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Réinitialiser
               </button>
@@ -273,7 +277,7 @@ export default function DefiLecture() {
                 const statut = statuts[el.id];
                 const designe = el.id === eleveDesigneId;
                 let couleur =
-                  "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
+                  "bg-fond text-encre-douce";
                 if (statut === "reussi")
                   couleur =
                     "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200";

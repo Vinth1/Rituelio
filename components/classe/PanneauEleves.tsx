@@ -47,7 +47,7 @@ export default function PanneauEleves({
   }
 
   return (
-    <section className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+    <section className="flex flex-col gap-5 rounded-carte border border-ligne bg-surface p-5">
       {/* En-tête : nom de classe éditable + suppression */}
       <div className="flex items-center justify-between gap-3">
         <input
@@ -55,7 +55,7 @@ export default function PanneauEleves({
           value={classe.nom}
           onChange={(e) => onRenommerClasse(e.target.value)}
           aria-label="Nom de la classe"
-          className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-1 text-lg font-semibold text-slate-800 hover:border-slate-200 focus:border-slate-300 focus:outline-none dark:text-slate-100 dark:hover:border-slate-600"
+          className="min-w-0 flex-1 rounded-moyen border border-transparent bg-transparent px-1 text-lg font-semibold text-encre hover:border-ligne focus:border-ligne focus:outline-none"
         />
         <button
           type="button"
@@ -74,11 +74,11 @@ export default function PanneauEleves({
           onChange={(e) => setNouvelEleve(e.target.value)}
           placeholder="Nom de l'élève"
           aria-label="Nom du nouvel élève"
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full rounded-moyen border border-ligne bg-surface px-3 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-lg bg-principal px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+          className="shrink-0 rounded-moyen bg-principal px-4 py-1.5 text-sm font-semibold text-sur-principal transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           Ajouter
         </button>
@@ -86,15 +86,15 @@ export default function PanneauEleves({
 
       {/* Liste des élèves */}
       {classe.eleves.length === 0 ? (
-        <p className="text-sm text-slate-400">
-          Aucun élève pour l'instant. Ajoute-les un par un, ou colle une liste
+        <p className="text-sm text-encre-douce">
+          Aucun élève pour l’instant. Ajoute-les un par un, ou colle une liste
           ci-dessous.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {classe.eleves.map((eleve, i) => (
             <li key={eleve.id} className="flex items-center gap-2">
-              <span className="w-6 shrink-0 text-right text-xs text-slate-400">
+              <span className="w-6 shrink-0 text-right text-xs text-encre-douce">
                 {i + 1}
               </span>
               <input
@@ -102,13 +102,13 @@ export default function PanneauEleves({
                 value={eleve.nom}
                 onChange={(e) => onRenommerEleve(eleve.id, e.target.value)}
                 aria-label={`Nom de l'élève ${i + 1}`}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full rounded-moyen border border-ligne bg-surface px-3 py-1.5 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               />
               <button
                 type="button"
                 onClick={() => onSupprimerEleve(eleve.id)}
                 aria-label={`Supprimer ${eleve.nom || "l'élève"}`}
-                className="shrink-0 rounded-lg px-2 py-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-500/10"
+                className="shrink-0 rounded-moyen px-2 py-1.5 text-encre-douce transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-500/10"
               >
                 <span aria-hidden="true">🗑</span>
               </button>
@@ -118,10 +118,10 @@ export default function PanneauEleves({
       )}
 
       {/* Import rapide par copier-coller */}
-      <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 dark:border-slate-700">
+      <div className="flex flex-col gap-2 border-t border-ligne pt-4">
         <label
           htmlFor="import-eleves"
-          className="text-sm font-medium text-slate-600 dark:text-slate-300"
+          className="text-sm font-medium text-encre-douce"
         >
           Import rapide (un nom par ligne)
         </label>
@@ -131,13 +131,13 @@ export default function PanneauEleves({
           onChange={(e) => setImportTexte(e.target.value)}
           rows={4}
           placeholder={"Alice\nBob\nChloé"}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          className="w-full rounded-moyen border border-ligne bg-surface px-3 py-2 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         />
         <button
           type="button"
           onClick={importer}
           disabled={!importTexte.trim()}
-          className="self-start rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+          className="self-start rounded-moyen bg-encre px-4 py-1.5 text-sm font-semibold text-fond transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
         >
           Importer
         </button>

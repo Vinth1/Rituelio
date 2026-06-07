@@ -1,5 +1,5 @@
 // Logo de Rituelio : une bulle de dialogue arrondie contenant une étoile,
-// suivie du mot « rituelio » dans la police arrondie (Nunito).
+// suivie du mot « rituelio » dans la police de titre (Fredoka en jour, Gochi en nuit).
 export default function Logo({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
@@ -20,7 +20,7 @@ export default function Logo({ className = "" }: { className?: string }) {
           fill="white"
         />
       </svg>
-      <span className="text-xl font-extrabold lowercase tracking-tight text-slate-900 dark:text-white">
+      <span className="font-titre text-xl font-extrabold lowercase tracking-tight text-encre">
         rituelio
       </span>
     </span>

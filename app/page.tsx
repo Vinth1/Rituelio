@@ -21,11 +21,11 @@ export default function Accueil() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="mb-10 text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+        <h1 className="font-titre text-3xl font-extrabold tracking-tight text-encre sm:text-4xl">
           Bienvenue sur Rituelio
         </h1>
-        <p className="mt-2 text-slate-500 dark:text-slate-400">
-          Qui utilise Rituelio aujourd'hui ?
+        <p className="mt-2 text-encre-douce">
+          Qui utilise Rituelio aujourd’hui ?
         </p>
       </div>
 
@@ -34,16 +34,16 @@ export default function Accueil() {
           <Link
             key={e.href}
             href={e.href}
-            className="group flex flex-col items-center gap-3 rounded-3xl border-2 border-slate-200 bg-white p-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-principal hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800"
+            className="group flex flex-col items-center gap-3 rounded-carte border-2 border-ligne bg-surface p-8 text-center shadow-sm transition hover:-translate-y-1 hover:border-principal hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             <span
-              className="flex h-20 w-20 items-center justify-center rounded-3xl bg-principal-clair text-4xl"
+              className="flex h-20 w-20 items-center justify-center rounded-carte bg-principal-clair text-4xl"
               aria-hidden="true"
             >
               {e.emoji}
             </span>
-            <span className="text-xl font-bold text-slate-900 dark:text-white">{e.titre}</span>
-            <span className="text-sm text-slate-500 dark:text-slate-400">{e.desc}</span>
+            <span className="font-titre text-xl font-bold text-encre">{e.titre}</span>
+            <span className="text-sm text-encre-douce">{e.desc}</span>
           </Link>
         ))}
       </div>
@@ -51,7 +51,7 @@ export default function Accueil() {
       <div className="mt-8 text-center">
         <Link
           href="/rejoindre"
-          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-white hover:text-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-encre-douce ring-1 ring-ligne transition hover:bg-surface hover:text-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           <span aria-hidden="true">📝</span> Rejoindre une évaluation
         </Link>

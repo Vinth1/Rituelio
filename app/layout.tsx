@@ -1,13 +1,32 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, Fredoka, Gochi_Hand, Quicksand } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import EnTete from "@/components/EnTete";
 
-// Police arrondie et lisible, appliquée à tout le site.
+// Corps de texte mode jour (« Bonbon Pop ») : Nunito, arrondie et lisible.
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
+});
+
+// Titres mode jour : Fredoka (police variable, gourmande et ronde).
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  variable: "--font-fredoka",
+});
+
+// Titres mode nuit (« Tableau ») : Gochi Hand, façon craie (non variable → poids fixe).
+const gochi = Gochi_Hand({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-gochi",
+});
+
+// Corps de texte mode nuit : Quicksand (police variable).
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
 });
 
 export const metadata: Metadata = {
@@ -25,9 +44,9 @@ export default function RootLayout({
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${nunito.variable} h-full antialiased`}
+      className={`${nunito.variable} ${fredoka.variable} ${gochi.variable} ${quicksand.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
+      <body className="min-h-full bg-fond text-encre">
         <Providers>
           <EnTete />
           <main>{children}</main>

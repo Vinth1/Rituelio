@@ -9,7 +9,7 @@ import BoutonAide from "./BoutonAide";
 
 export default function CarteJeu({ jeu }: { jeu: Jeu }) {
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
+    <article className="group relative flex flex-col overflow-hidden rounded-carte border border-ligne bg-surface shadow-sm transition hover:shadow-md">
       <BoutonAide jeu={jeu} />
       <Link
         href={`/jeux/${jeu.id}?espace=prof`}
@@ -23,12 +23,12 @@ export default function CarteJeu({ jeu }: { jeu: Jeu }) {
         </div>
         <div className="flex flex-1 flex-col gap-2 p-4">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-slate-800 dark:text-slate-100">{jeu.titre}</h3>
+            <h3 className="font-titre font-semibold text-encre">{jeu.titre}</h3>
             {jeu.duree && (
-              <span className="shrink-0 text-xs text-slate-400">⏱ {jeu.duree}</span>
+              <span className="shrink-0 text-xs text-encre-douce">⏱ {jeu.duree}</span>
             )}
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{jeu.resume}</p>
+          <p className="text-sm text-encre-douce">{jeu.resume}</p>
           <div className="mt-auto pt-1">
             <Badge type={jeu.type} />
           </div>
@@ -36,10 +36,10 @@ export default function CarteJeu({ jeu }: { jeu: Jeu }) {
       </Link>
 
       {/* Bouton « Projeter » → vue plein écran pour le tableau (mode projection) */}
-      <div className="border-t border-slate-100 p-3 dark:border-slate-700">
+      <div className="border-t border-ligne p-3">
         <Link
           href={`/jeux/${jeu.id}/projeter`}
-          className="block w-full rounded-lg bg-principal-clair px-3 py-1.5 text-center text-sm font-semibold text-principal-fonce transition hover:bg-principal hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-principal/15 dark:text-principal"
+          className="block w-full rounded-moyen bg-badge px-3 py-1.5 text-center text-sm font-semibold text-badge-encre transition hover:bg-principal hover:text-sur-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         >
           ▶ Projeter
         </Link>

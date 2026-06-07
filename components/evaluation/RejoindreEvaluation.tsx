@@ -113,19 +113,19 @@ export default function RejoindreEvaluation() {
   }
 
   const btnPrincipal =
-    "rounded-full bg-principal px-6 py-2.5 text-base font-bold text-white shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
+    "rounded-full bg-principal px-6 py-2.5 text-base font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
 
   // ---------- Écran : copie envoyée ----------
   if (phase === "envoye") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-800">
+      <div className="rounded-carte border border-ligne bg-surface p-8 text-center">
         <p className="text-5xl" aria-hidden="true">
           ✅
         </p>
-        <h1 className="mt-3 text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h1 className="mt-3 font-titre text-2xl font-bold text-encre">
           Copie envoyée !
         </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-encre-douce">
           Ton professeur a bien reçu ta copie. Tu peux fermer la page.
         </p>
       </div>
@@ -135,25 +135,25 @@ export default function RejoindreEvaluation() {
   // ---------- Écran : saisie prénom + code ----------
   if (phase === "saisie") {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+      <div className="rounded-carte border border-ligne bg-surface p-6">
+        <h1 className="font-titre text-2xl font-bold text-encre">
           Rejoindre une évaluation
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-encre-douce">
           Entre ton prénom et le code donné par ton professeur.
         </p>
         <form onSubmit={rejoindre} className="mt-5 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
             Prénom
             <input
               type="text"
               value={prenom}
               onChange={(e) => setPrenom(e.target.value)}
               placeholder="Ton prénom"
-              className="max-w-xs rounded-full border border-slate-300 bg-white px-4 py-2 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+              className="max-w-xs rounded-full border border-ligne bg-surface px-4 py-2 text-base text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
             Code
             <input
               type="text"
@@ -161,7 +161,7 @@ export default function RejoindreEvaluation() {
               onChange={(e) => setCode(e.target.value)}
               placeholder="Ex. CM1-482"
               autoCapitalize="characters"
-              className="max-w-xs rounded-full border border-slate-300 bg-white px-4 py-2 text-base font-semibold uppercase tracking-wide text-slate-800 placeholder:font-normal placeholder:normal-case placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+              className="max-w-xs rounded-full border border-ligne bg-surface px-4 py-2 text-base font-semibold uppercase tracking-wide text-encre placeholder:font-normal placeholder:normal-case placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
             />
           </label>
           {erreur && (
@@ -183,16 +183,16 @@ export default function RejoindreEvaluation() {
 
   // ---------- Écran : composer la copie ----------
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-carte border border-ligne bg-surface p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h1 className="font-titre text-2xl font-bold text-encre">
           {evaluation?.name}
         </h1>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
+        <span className="text-sm text-encre-douce">
           Bonjour {prenom.trim()}
         </span>
       </div>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-sm text-encre-douce">
         Complète les tableaux, puis écris ta phrase. Tu pourras tout envoyer à la
         fin.
       </p>
@@ -202,13 +202,13 @@ export default function RejoindreEvaluation() {
         {(evaluation?.verbes ?? []).map((v, t) => (
           <div
             key={t}
-            className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
+            className="rounded-carte border border-ligne p-4"
           >
             <div className="mb-3 text-center">
-              <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              <p className="text-xl font-bold text-encre">
                 {v.infinitif}
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-encre-douce">
                 {v.temps} · {v.mode}
               </p>
             </div>
@@ -221,7 +221,7 @@ export default function RejoindreEvaluation() {
                     onChange={(e) => majLigne(t, i, "pronom", e.target.value)}
                     placeholder="pronom"
                     aria-label={`Pronom ligne ${i + 1} de ${v.infinitif}`}
-                    className="w-20 shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-20 shrink-0 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                   />
                   <input
                     type="text"
@@ -229,7 +229,7 @@ export default function RejoindreEvaluation() {
                     onChange={(e) => majLigne(t, i, "forme", e.target.value)}
                     placeholder="forme conjuguée"
                     aria-label={`Forme ligne ${i + 1} de ${v.infinitif}`}
-                    className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="min-w-0 flex-1 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                   />
                 </div>
               ))}
@@ -240,12 +240,12 @@ export default function RejoindreEvaluation() {
 
       {/* Ma phrase */}
       <div className="mt-6">
-        <h2 className="font-bold text-slate-800 dark:text-slate-100">Ma phrase</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="font-titre font-bold text-encre">Ma phrase</h2>
+        <p className="text-sm text-encre-douce">
           Écris une phrase qui utilise les deux verbes.
         </p>
         {(evaluation?.contraintes.length ?? 0) > 0 && (
-          <ul className="mt-2 list-disc pl-5 text-sm text-slate-600 dark:text-slate-300">
+          <ul className="mt-2 list-disc pl-5 text-sm text-encre-douce">
             {evaluation?.contraintes.map((c, i) => (
               <li key={i}>{c}</li>
             ))}
@@ -257,7 +257,7 @@ export default function RejoindreEvaluation() {
           rows={3}
           placeholder="Ta phrase…"
           aria-label="Ta phrase"
-          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+          className="mt-2 w-full rounded-carte border border-ligne bg-surface px-3 py-2 text-base text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
         />
       </div>
 
@@ -276,7 +276,7 @@ export default function RejoindreEvaluation() {
         >
           {envoi ? "Envoi…" : "Envoyer ma copie"}
         </button>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-encre-douce">
           Une fois envoyée, tu ne pourras plus la modifier.
         </span>
       </div>

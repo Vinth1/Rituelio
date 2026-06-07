@@ -19,13 +19,17 @@ export default function GestionClasses() {
   const [charge, setCharge] = useState(false);
   const [nomNouvelleClasse, setNomNouvelleClasse] = useState("");
 
-  // Chargement initial depuis le localStorage (côté client uniquement).
+  // Chargement initial depuis le localStorage (côté client uniquement). On initialise
+  // dans un effet — et non en valeur d'état — pour éviter un décalage d'hydratation :
+  // le serveur n'a pas accès au localStorage (faux positif de set-state-in-effect).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const initiales = chargerClasses();
     setClasses(initiales);
     setClasseActiveId(initiales[0]?.id ?? null);
     setCharge(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Enregistrement automatique : chaque changement est écrit dans le navigateur,
   // pour que les jeux voient aussitôt les classes (aucun bouton à cliquer).
@@ -100,10 +104,10 @@ export default function GestionClasses() {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="font-titre text-2xl font-bold tracking-tight text-encre">
           Mes classes
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-encre-douce">
           Gère tes classes et leurs élèves. Tes changements sont enregistrés
           automatiquement et aussitôt disponibles dans les jeux.
         </p>
@@ -135,14 +139,14 @@ export default function GestionClasses() {
                   onClick={() => setClasseActiveId(c.id)}
                   className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
                     actif
-                      ? "bg-principal text-white shadow-sm"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-700"
+                      ? "bg-principal text-sur-principal shadow-sm"
+                      : "bg-surface text-encre-douce ring-1 ring-ligne hover:bg-fond"
                   }`}
                 >
                   {c.nom || "Sans nom"}
                   <span
                     className={`rounded-full px-1.5 text-xs ${
-                      actif ? "bg-white/20" : "bg-slate-100 dark:bg-slate-700"
+                      actif ? "bg-sur-principal/20" : "bg-fond"
                     }`}
                   >
                     {c.eleves.length}
@@ -160,11 +164,11 @@ export default function GestionClasses() {
             onChange={(e) => setNomNouvelleClasse(e.target.value)}
             placeholder="Nom de la classe (ex. CM1, 6e FLE)"
             aria-label="Nom de la nouvelle classe"
-            className="w-full max-w-xs rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className="w-full max-w-xs rounded-full border border-ligne bg-surface px-4 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            className="shrink-0 rounded-full bg-encre px-4 py-1.5 text-sm font-semibold text-fond transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
           >
             + Nouvelle classe
           </button>
@@ -173,7 +177,7 @@ export default function GestionClasses() {
 
       {/* Panneau de la classe active */}
       {!charge ? (
-        <p className="text-sm text-slate-400">Chargement…</p>
+        <p className="text-sm text-encre-douce">Chargement…</p>
       ) : classeActive ? (
         <PanneauEleves
           classe={classeActive}
@@ -189,7 +193,7 @@ export default function GestionClasses() {
           onImporterEleves={(texte) => importerEleves(classeActive.id, texte)}
         />
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
           Crée une première classe pour commencer.
         </p>
       )}

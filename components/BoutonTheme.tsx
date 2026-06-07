@@ -10,16 +10,27 @@ export default function BoutonTheme() {
 
   // Le thème résolu n'est connu qu'au montage côté client : on évite ainsi
   // tout décalage d'hydratation (on affiche une icône neutre en attendant).
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- bascule au montage volontaire (anti-hydratation)
   useEffect(() => setMonte(true), []);
 
   const sombre = resolvedTheme === "dark";
+
+  // Libellé qui annonce le mode vers lequel on bascule (jour « Bonbon » / nuit « Tableau »).
+  // Tant que le thème résolu est inconnu (avant montage côté client), on garde un libellé
+  // neutre : sinon serveur et client divergent → décalage d'hydratation.
+  const etiquette = !monte
+    ? "Changer de thème"
+    : sombre
+      ? "Passer en mode Bonbon (jour)"
+      : "Passer en mode Tableau (nuit)";
 
   return (
     <button
       type="button"
       onClick={() => setTheme(sombre ? "light" : "dark")}
-      aria-label={sombre ? "Activer le thème clair" : "Activer le thème sombre"}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+      aria-label={etiquette}
+      title={etiquette}
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-ligne bg-surface text-lg transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
     >
       <span aria-hidden="true">{monte ? (sombre ? "☀️" : "🌙") : "🌗"}</span>
     </button>
