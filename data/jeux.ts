@@ -34,6 +34,7 @@ export type Jeu = {
 
   // --- Accès ---
   profSeulement?: boolean;    // si vrai : réservé à l'espace prof (caché côté élève)
+  eleveSeulement?: boolean;   // si vrai : réservé à l'espace élève (caché côté prof)
 };
 
 export const jeux: Jeu[] = [
@@ -131,5 +132,16 @@ export const jeux: Jeu[] = [
     duree: "20 min",
     composant: "ConjugaisonEntrainement",
     profSeulement: true,
+  },
+  {
+    id: "conjugaison",
+    titre: "Conjugaison",
+    categorie: "conjugaison",
+    type: "jouable",
+    resume: "Rejoins une évaluation avec ton code",
+    icone: "📝",
+    couleur: "green",
+    composant: "ConjugaisonEleve",
+    eleveSeulement: true,
   },
 ];
