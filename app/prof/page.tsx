@@ -29,7 +29,7 @@ export default async function EspaceProf() {
         </Link>
       </div>
 
-      <Catalogue jeux={jeux} />
+      <Catalogue jeux={jeux.filter((jeu) => !jeu.eleveSeulement)} />
     </div>
   );
 }
