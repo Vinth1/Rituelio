@@ -25,13 +25,13 @@ export async function PATCH(request: Request, ctx: Ctx) {
     return Response.json({ erreur: "Corps invalide" }, { status: 400 });
   }
   if (Array.isArray(body.contraintesValidees)) {
-    definirContraintesValidees(id, body.contraintesValidees.map(String));
+    await definirContraintesValidees(id, body.contraintesValidees.map(String));
   }
   if (typeof body.commentaire === "string") {
-    fixerCommentaire(id, body.commentaire);
+    await fixerCommentaire(id, body.commentaire);
   }
   if (body.noteForcee === null || typeof body.noteForcee === "number") {
-    forcerNote(id, body.noteForcee ?? null);
+    await forcerNote(id, body.noteForcee ?? null);
   }
   return Response.json({ ok: true });
 }

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const identifiant =
     typeof body?.identifiant === "string" ? body.identifiant : "";
 
-  const res = changerIdentifiant(session.userId, identifiant);
+  const res = await changerIdentifiant(session.userId, identifiant);
   if (!res.ok) {
     if (res.raison === "court") {
       return Response.json(

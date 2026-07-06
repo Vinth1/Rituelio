@@ -16,7 +16,7 @@ export type ProfConnecte = {
 export const sessionProf = cache(async (): Promise<SessionProf | null> => {
   const jeton = (await cookies()).get(COOKIE_SESSION)?.value;
   if (!jeton) return null;
-  const userId = userIdDeSession(jeton);
+  const userId = await userIdDeSession(jeton);
   return userId ? { userId } : null;
 });
 
@@ -24,7 +24,7 @@ export const sessionProf = cache(async (): Promise<SessionProf | null> => {
 export const profConnecte = cache(async (): Promise<ProfConnecte | null> => {
   const session = await sessionProf();
   if (!session) return null;
-  const infos = infosCompte(session.userId);
+  const infos = await infosCompte(session.userId);
   return infos ? { userId: session.userId, ...infos } : null;
 });
 

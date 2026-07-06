@@ -8,7 +8,7 @@ import {
   evaluationsDeClasse,
   type VerbeRef,
 } from "@/lib/serveur/evaluations";
-import { refuserSiNonProf } from "@/lib/serveur/session-prof";
+import { refuserSiNonProf, sessionProf } from "@/lib/serveur/session-prof";
 
 type CorpsCreation = {
   name?: string;
@@ -20,15 +20,18 @@ type CorpsCreation = {
 };
 
 export async function POST(request: Request) {
-  const refus = await refuserSiNonProf();
-  if (refus) return refus;
+  const session = await sessionProf();
+  if (!session) {
+    return Response.json({ erreur: "Non autorisé" }, { status: 401 });
+  }
   const body = (await request.json().catch(() => null)) as CorpsCreation | null;
   if (!body || !Array.isArray(body.verbes) || body.verbes.length === 0) {
     return Response.json({ erreur: "Données invalides" }, { status: 400 });
   }
   const date = String(body.date ?? "");
-  const { code } = creerEvaluation({
+  const { code } = await creerEvaluation({
     name: body.name?.trim() || `Évaluation du ${date || "jour"}`,
+    userId: session.userId,
     classeId: String(body.classeId ?? ""),
     classeNom: String(body.classeNom ?? ""),
     date,
@@ -51,5 +54,5 @@ export async function GET(request: Request) {
   if (!classeId) {
     return Response.json({ erreur: "classeId requis" }, { status: 400 });
   }
-  return Response.json({ evaluations: evaluationsDeClasse(classeId) });
+  return Response.json({ evaluations: await evaluationsDeClasse(classeId) });
 }
