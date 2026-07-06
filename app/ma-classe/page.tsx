@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import AujourdHui from "@/components/ma-classe/AujourdHui";
+import { classesDeProf } from "@/lib/serveur/classes";
+import { creneauxDeProf } from "@/lib/serveur/creneaux";
 import { reglagesDeProf, urlOuvrable } from "@/lib/serveur/reglages";
 import { sessionProf } from "@/lib/serveur/session-prof";
 
@@ -43,7 +46,12 @@ function LienRapide({ libelle, url }: { libelle: string; url: string }) {
 export default async function TableauDeBordMaClasse() {
   const session = await sessionProf();
   if (!session) redirect("/connexion?next=/ma-classe");
-  const reglages = await reglagesDeProf(session.userId);
+  const [reglages, creneaux, classes] = await Promise.all([
+    reglagesDeProf(session.userId),
+    creneauxDeProf(session.userId),
+    classesDeProf(session.userId),
+  ]);
+  const classesLegeres = classes.map((c) => ({ id: c.id, nom: c.nom }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -60,17 +68,11 @@ export default async function TableauDeBordMaClasse() {
         {/* Aujourd'hui */}
         <section className={CARTE}>
           <h2 className={TITRE_ZONE}>Aujourd&apos;hui</h2>
-          <p className="mt-1 text-sm text-encre-douce">
-            Tes cours du jour apparaîtront ici.
-          </p>
-          <div className={VIDE}>
-            <p>Configure ton emploi du temps pour voir tes cours du jour.</p>
-            <div className="mt-3">
-              <Link href="/ma-classe/emploi-du-temps" className={BOUTON_PRIMAIRE}>
-                Emploi du temps <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
+          <AujourdHui
+            creneaux={creneaux}
+            classes={classesLegeres}
+            urlVulkan={reglages.urlVulkan}
+          />
         </section>
 
         {/* À traiter */}
