@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { jeux } from "@/data/jeux";
 import BasculeEspace from "@/components/BasculeEspace";
+import NavEspaceProf from "@/components/NavEspaceProf";
 import Catalogue from "@/components/Catalogue";
 import { sessionProf } from "@/lib/serveur/session-prof";
 
@@ -13,6 +14,7 @@ export default async function EspaceProf() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <BasculeEspace />
+      <NavEspaceProf />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
