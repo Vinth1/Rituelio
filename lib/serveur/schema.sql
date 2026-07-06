@@ -153,6 +153,9 @@ CREATE TABLE IF NOT EXISTS prepas_cours (
 );
 CREATE INDEX IF NOT EXISTS idx_prepas_user ON prepas_cours(user_id);
 CREATE INDEX IF NOT EXISTS idx_prepas_creneau ON prepas_cours(creneau_id);
+-- Au plus une prépa par (prof, créneau, date concrète) — sert aussi à l'upsert.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prepas_unique
+  ON prepas_cours(user_id, creneau_id, date_iso);
 CREATE TABLE IF NOT EXISTS taches (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
