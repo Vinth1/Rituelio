@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import ModuleBientot from "@/components/ma-classe/ModuleBientot";
+import EmploiDuTemps from "@/components/ma-classe/EmploiDuTemps";
 
 export const metadata: Metadata = {
   title: "Emploi du temps — Ma classe — Rituelio",
 };
 
+// La garde d'auth est assurée par app/ma-classe/layout.tsx.
 export default function PageEmploiDuTemps() {
-  return (
-    <ModuleBientot
-      titre="Emploi du temps"
-      description="Ta semaine type : quels cours, quelles classes, quels créneaux."
-    />
-  );
+  return <EmploiDuTemps />;
 }
