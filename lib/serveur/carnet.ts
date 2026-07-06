@@ -42,6 +42,44 @@ export async function supprimerMatiere(userId: string, id: string): Promise<void
   await sql()`DELETE FROM matieres WHERE id = ${id} AND user_id = ${userId}`;
 }
 
+// Matière + sa classe (nom), scopé prof. Null si inconnue/autre prof (pour l'export).
+export async function matiereComplete(
+  userId: string,
+  matiereId: string,
+): Promise<{ id: string; nom: string; classeId: string; classeNom: string } | null> {
+  const [r] = await sql()`
+    SELECT m.id, m.nom, m.classe_id, c.nom AS classe_nom
+    FROM matieres m JOIN classes c ON c.id = m.classe_id
+    WHERE m.id = ${matiereId} AND m.user_id = ${userId}
+  `;
+  if (!r) return null;
+  const row = r as {
+    id: string;
+    nom: string;
+    classe_id: string;
+    classe_nom: string;
+  };
+  return {
+    id: row.id,
+    nom: row.nom,
+    classeId: row.classe_id,
+    classeNom: row.classe_nom,
+  };
+}
+
+// Élèves d'une classe du prof (ordre stable).
+export async function elevesDeClasse(
+  userId: string,
+  classeId: string,
+): Promise<{ id: string; nom: string }[]> {
+  const rows = (await sql()`
+    SELECT e.id, e.nom FROM eleves e JOIN classes c ON c.id = e.classe_id
+    WHERE e.classe_id = ${classeId} AND c.user_id = ${userId}
+    ORDER BY e.ordre, e.nom
+  `) as unknown as { id: string; nom: string }[];
+  return rows.map((r) => ({ id: r.id, nom: r.nom }));
+}
+
 // ===== Ownership helpers =====
 async function matiereDuProf(userId: string, matiereId: string): Promise<boolean> {
   const [r] = await sql()`
