@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import ModuleBientot from "@/components/ma-classe/ModuleBientot";
+import CarnetNotes from "@/components/ma-classe/CarnetNotes";
 
 export const metadata: Metadata = {
-  title: "Notes — Ma classe — Rituelio",
+  title: "Carnet de notes — Ma classe — Rituelio",
 };
 
+// La garde d'auth est assurée par app/ma-classe/layout.tsx.
 export default function PageNotes() {
-  return (
-    <ModuleBientot
-      titre="Carnet de notes"
-      description="Notes par matière, classe et trimestre, avec calcul des moyennes."
-    />
-  );
+  return <CarnetNotes />;
 }
