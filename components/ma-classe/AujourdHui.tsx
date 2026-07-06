@@ -7,6 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CLES_ACCENT, couleurBande } from "@/lib/couleurs";
 import { enMinutes, jourCourant } from "@/lib/emploi-du-temps";
+import { STATUT_INFO, type StatutPrepa } from "@/lib/prepa";
+import { isoDe } from "@/lib/semaine";
 
 type Creneau = {
   id: string;
@@ -31,10 +33,12 @@ export default function AujourdHui({
   creneaux,
   classes,
   urlVulkan,
+  prepas,
 }: {
   creneaux: Creneau[];
   classes: Classe[];
   urlVulkan: string;
+  prepas: { creneauId: string; statut: StatutPrepa }[];
 }) {
   const [jourNow, setJourNow] = useState<number | null>(null);
   const [minNow, setMinNow] = useState(0);
@@ -78,6 +82,13 @@ export default function AujourdHui({
         .sort((a, b) => enMinutes(a.heureDebut) - enMinutes(b.heureDebut)),
     [creneaux, jourNow],
   );
+
+  const statutParCreneau = useMemo(() => {
+    const m = new Map<string, StatutPrepa>();
+    prepas.forEach((p) => m.set(p.creneauId, p.statut));
+    return m;
+  }, [prepas]);
+  const todayISO = isoDe(new Date());
 
   // Cours à « pointer » : celui en cours, sinon le prochain à venir.
   const idActif = useMemo(() => {
@@ -131,6 +142,11 @@ export default function AujourdHui({
         const info = couleurDe.get(c.classeId);
         const actif = c.id === idActif;
         const fait = faits.has(c.id);
+        const statut = statutParCreneau.get(c.id);
+        const badgePrepa = statut
+          ? STATUT_INFO[statut].badge
+          : "bg-fond text-encre-douce ring-1 ring-ligne";
+        const libellePrepa = statut ? STATUT_INFO[statut].libelle : "À préparer";
         return (
           <li
             key={c.id}
@@ -151,6 +167,13 @@ export default function AujourdHui({
                 {c.salle ? ` · ${c.salle}` : ""}
               </p>
             </div>
+            <Link
+              href={`/ma-classe/prepa?date=${todayISO}&creneau=${c.id}`}
+              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${badgePrepa}`}
+              title="Voir ou créer la prépa"
+            >
+              {libellePrepa}
+            </Link>
             {actif &&
               (ouvrable(urlVulkan) ? (
                 <a

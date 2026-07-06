@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 import AujourdHui from "@/components/ma-classe/AujourdHui";
 import { classesDeProf } from "@/lib/serveur/classes";
 import { creneauxDeProf } from "@/lib/serveur/creneaux";
+import { prepasEntreDates } from "@/lib/serveur/prepas";
 import { reglagesDeProf, urlOuvrable } from "@/lib/serveur/reglages";
 import { sessionProf } from "@/lib/serveur/session-prof";
+import { isoDe } from "@/lib/semaine";
 
 export const metadata: Metadata = {
   title: "Ma classe — Rituelio",
@@ -46,12 +48,18 @@ function LienRapide({ libelle, url }: { libelle: string; url: string }) {
 export default async function TableauDeBordMaClasse() {
   const session = await sessionProf();
   if (!session) redirect("/connexion?next=/ma-classe");
-  const [reglages, creneaux, classes] = await Promise.all([
+  const aujourdISO = isoDe(new Date());
+  const [reglages, creneaux, classes, prepasJour] = await Promise.all([
     reglagesDeProf(session.userId),
     creneauxDeProf(session.userId),
     classesDeProf(session.userId),
+    prepasEntreDates(session.userId, aujourdISO, aujourdISO),
   ]);
   const classesLegeres = classes.map((c) => ({ id: c.id, nom: c.nom }));
+  const prepasLegeres = prepasJour.map((p) => ({
+    creneauId: p.creneauId,
+    statut: p.statut,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,6 +80,7 @@ export default async function TableauDeBordMaClasse() {
             creneaux={creneaux}
             classes={classesLegeres}
             urlVulkan={reglages.urlVulkan}
+            prepas={prepasLegeres}
           />
         </section>
 
