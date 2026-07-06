@@ -29,10 +29,13 @@ mode de jeu), tableau de bord de classe (grille de cartes + carte « + »).
 
 - **Next.js (App Router) + React + TypeScript**
 - **Tailwind CSS** pour le style
-- **Données dans des fichiers** (pas de base de données, pas de back-end au début) :
+- **Contenu statique dans des fichiers** :
   - Catalogue des jeux : `data/jeux.ts`
   - Jeux jouables : composants React dans `components/jeux/`
-- Déploiement visé : **Vercel** (gratuit, simple).
+  - Banques de contenu : `data/verbes.ts`, `data/quiz.ts`…
+- **Backend Postgres** pour les données dynamiques et sensibles (comptes prof,
+  évaluations, classes/élèves, « Ma classe ») — voir la section **Backend**.
+- Déploiement visé : **Vercel** + **Postgres managé** (Neon / Vercel Postgres).
 
 ## Architecture
 
@@ -44,6 +47,37 @@ mode de jeu), tableau de bord de classe (grille de cartes + carte « + »).
   - jeu `jouable` → lance le composant interactif (+ onglet « Plus d'infos / Aide »)
 - Chaque jeu a un `id` (slug). Les jeux jouables référencent leur composant via
   le champ `composant`.
+
+## Backend
+
+Le site n'est plus 100 % localStorage : un **backend Postgres** porte les données
+dynamiques et sensibles. Client SQL : le paquet `postgres` (postgres.js), requêtes
+écrites à la main (pas d'ORM).
+
+- **Couche serveur** dans `lib/serveur/` (importe le client — **jamais côté client**) :
+  - `db.ts` : connexion + helper `transaction`. Exige `DATABASE_URL`.
+  - `auth.ts` : comptes prof (scrypt), sessions opaques.
+  - `session-prof.ts` : `sessionProf()` / `refuserSiNonProf()` (garde pages & routes).
+  - `evaluations.ts` : mode évaluation (correction /20).
+  - `classes.ts` : classes & élèves (source de vérité).
+- **Schéma** : source unique `lib/serveur/schema.sql`, appliqué par
+  `npm run db:migrate` (idempotent). À rejouer après toute évolution.
+- **Auth prof** : cookie httpOnly `rituelio_prof`, mot de passe **haché en base**
+  (jamais en clair côté client). L'**espace prof** (`/prof`, `/classe`, API prof)
+  est protégé **côté serveur** ; l'**espace élève** reste public. Un seul compte
+  pour l'instant, mais la table accepte déjà le multi-comptes.
+- **Cloisonnement** : chaque donnée prof/sensible porte un `user_id` et est filtrée
+  par propriétaire.
+- **Variables d'environnement** (`.env.local`, cf. `.env.example`) : `DATABASE_URL`
+  (obligatoire), `PROF_MOT_DE_PASSE` (amorçage du compte au 1er login),
+  `CLE_INSCRIPTION` (optionnel, ouvre `/inscription`).
+- **Classes/élèves** : source de vérité = backend (`/api/classes`). Un **miroir
+  localStorage** est maintenu pour les jeux pas encore migrés (à migrer vers l'API).
+- **« Ma classe »** : les tables existent (`creneaux`, `matieres`, `taches`,
+  `notes_eleves`, `faits_comportement`, `consequences`, `prepas_cours`,
+  `reglages_prof`, `trimestres`) — **l'UI viendra dans des PR ultérieures**.
+
+Lancement local : voir le **README** (Postgres via Docker + `npm run db:migrate`).
 
 ## Modèle de données
 

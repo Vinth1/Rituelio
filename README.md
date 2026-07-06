@@ -10,9 +10,10 @@ en classe. Une page d'accueil sépare deux usages :
 - **Espace élève** — la même liste, simplifiée et agrandie, sans les informations réservées
   au prof : l'élève ouvre un jeu et voit **comment y jouer**.
 
-> v1 **locale** : pas de mise en ligne, pas de comptes, pas de base de données. Le contenu
-> est édité à la main dans `data/jeux.ts`. La séparation prof/élève est un simple choix
-> d'interface (pas une connexion sécurisée).
+> Le catalogue de jeux est édité à la main dans `data/jeux.ts`. Les données
+> dynamiques (comptes prof, évaluations, classes/élèves) vivent dans un **backend
+> Postgres** ; l'espace prof est protégé par une **vraie connexion côté serveur**,
+> l'espace élève reste public.
 
 ## Fonctionnalités
 
@@ -24,7 +25,9 @@ en classe. Une page d'accueil sépare deux usages :
   « Plus d'infos / Aide » (objectifs, conseils) n'apparaît **que côté prof**.
 - **Mode projection** (`/jeux/[id]/projeter`) : plein écran, fort contraste, gros
   caractères, déroulé une étape à la fois (navigation au clavier).
-- **Gestion des classes** (`/classe`) : classes et élèves, en `localStorage`.
+- **Gestion des classes** (`/classe`) : classes et élèves, enregistrés sur le
+  **backend** (source de vérité ; un miroir `localStorage` sert les jeux pas
+  encore migrés).
 - **Thème clair / sombre** et identité visuelle (police Nunito, couleur turquoise, logo).
 
 ## Stack technique
@@ -32,16 +35,26 @@ en classe. Une page d'accueil sépare deux usages :
 - [Next.js 16](https://nextjs.org/) (App Router) + React 19 + TypeScript
 - [Tailwind CSS v4](https://tailwindcss.com/) · police **Nunito** (`next/font`)
 - [next-themes](https://github.com/pacocoursey/next-themes) (thème clair/sombre)
-- Données dans des fichiers (`data/jeux.ts`) — pas de base de données.
+- Catalogue en fichiers (`data/jeux.ts`) ; **backend Postgres** (client
+  [`postgres`](https://github.com/porsager/postgres)) pour les données dynamiques.
 
 ## Démarrage
 
 ```bash
-npm install   # la première fois
-npm run dev    # serveur de développement
+npm install                       # dépendances
+
+# Postgres local (Docker) — port 5433 pour ne pas gêner un Postgres existant
+docker run -d --name rituelio-pg \
+  -e POSTGRES_USER=rituelio -e POSTGRES_PASSWORD=rituelio -e POSTGRES_DB=rituelio \
+  -p 5433:5432 postgres:16-alpine
+
+cp .env.example .env.local        # puis renseigner DATABASE_URL + PROF_MOT_DE_PASSE
+npm run db:migrate                # crée les tables
+npm run dev                       # serveur de développement
 ```
 
-Puis ouvrir **http://localhost:3000**.
+Puis ouvrir **http://localhost:3000**. En local, `.env.local` contient par exemple
+`DATABASE_URL=postgres://rituelio:rituelio@localhost:5433/rituelio`.
 
 | Commande | Effet |
 | --- | --- |
@@ -49,6 +62,7 @@ Puis ouvrir **http://localhost:3000**.
 | `npm run build` | Build de production |
 | `npm run start` | Sert le build de production |
 | `npm run lint` | Vérifie le code (ESLint) |
+| `npm run db:migrate` | Applique le schéma Postgres (`lib/serveur/schema.sql`) |
 
 ## Authentification prof
 
@@ -70,8 +84,9 @@ jeux ouverts) reste librement accessible.
   protégée par un **code d'inscription** secret (variable d'env `CLE_INSCRIPTION`). Sans cette
   variable, l'inscription est désactivée. À la création, le compte est connecté automatiquement.
 
-> ⚠️ La base est un fichier SQLite local (`.data/`). Sur un hébergement *serverless* (Vercel),
-> ce fichier est éphémère : viser un hébergement persistant pour conserver compte et évaluations.
+> La base est un **Postgres** défini par `DATABASE_URL`. En production, viser un
+> Postgres managé (**Neon** / **Vercel Postgres**) et appliquer le schéma une fois
+> avec `npm run db:migrate`. (Un fichier SQLite local ne persisterait pas sur Vercel.)
 
 ## Structure du projet
 
@@ -93,7 +108,9 @@ components/
   VueProjection                              Vue plein écran pour le tableau
   classe/                                    Gestion des classes
 data/jeux.ts                  Catalogue des jeux (type Jeu + données)
-lib/                          categories, couleurs, classes
+lib/                          categories, couleurs, classes, evaluation-types
+lib/serveur/                  backend Postgres (db, auth, evaluations, classes)
+lib/serveur/schema.sql        schéma unique appliqué par `npm run db:migrate`
 ```
 
 ## Ajouter un jeu

@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ code: string }> };
 
 export async function GET(_request: Request, ctx: Ctx) {
   const { code } = await ctx.params;
-  const evaluation = evaluationParCode(code);
+  const evaluation = await evaluationParCode(code);
   if (!evaluation) {
     return Response.json({ erreur: "Évaluation introuvable" }, { status: 404 });
   }
@@ -25,7 +25,7 @@ export async function PATCH(request: Request, ctx: Ctx) {
     statut?: string;
   } | null;
   if (body?.statut === "terminee") {
-    terminer(code);
+    await terminer(code);
     return Response.json({ ok: true });
   }
   return Response.json({ erreur: "Action inconnue" }, { status: 400 });

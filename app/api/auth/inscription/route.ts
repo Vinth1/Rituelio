@@ -50,12 +50,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const res = creerCompte({ email, identifiant, motDePasse });
+  const res = await creerCompte({ email, identifiant, motDePasse });
   if (!res.ok) {
     return Response.json({ erreur: res.erreur }, { status: 409 });
   }
 
-  const jeton = creerSession(res.userId);
+  const jeton = await creerSession(res.userId);
   (await cookies()).set(COOKIE_SESSION, jeton, {
     httpOnly: true,
     sameSite: "lax",

@@ -1,7 +1,7 @@
-// Couche d'accès aux évaluations (côté serveur). Lit/écrit dans SQLite et calcule
+// Couche d'accès aux évaluations (côté serveur). Lit/écrit dans Postgres et calcule
 // la correction (formes via la banque de verbes, note /20) à la lecture, pour
 // éviter des scores périmés. Module serveur uniquement (dépend de `./db`).
-import { db, transaction } from "./db";
+import { sql, transaction } from "./db";
 import {
   calculerNote,
   formeEstCorrecte,
@@ -40,78 +40,88 @@ function prefixeCode(classeNom: string): string {
   return base.slice(0, 4) || "EVAL";
 }
 
-function genererCode(classeNom: string): string {
+async function genererCode(classeNom: string): Promise<string> {
   const prefixe = prefixeCode(classeNom);
   for (let i = 0; i < 50; i++) {
     const code = `${prefixe}-${Math.floor(100 + Math.random() * 900)}`;
-    const existe = db().prepare("SELECT 1 FROM sessions WHERE code = ?").get(code);
+    const [existe] = await sql()`SELECT 1 FROM sessions WHERE code = ${code}`;
     if (!existe) return code;
   }
   return `${prefixe}-${Date.now() % 100000}`;
 }
 
 // --- Création (prof) ---
-export function creerEvaluation(p: {
+export async function creerEvaluation(p: {
   name: string;
+  userId: string;
   classeId: string;
   classeNom: string;
   date: string;
   verbes: VerbeRef[];
   contraintes: string[];
-}): { code: string } {
-  const code = genererCode(p.classeNom);
+}): Promise<{ code: string }> {
+  const code = await genererCode(p.classeNom);
   const sessionId = id();
-  transaction(() => {
-    db()
-      .prepare(
-        "INSERT INTO sessions (id,code,name,class_id,class_name,date,status,created_at) VALUES (?,?,?,?,?,?, 'ouverte', ?)",
-      )
-      .run(sessionId, code, p.name, p.classeId, p.classeNom, p.date, Date.now());
-    p.verbes.forEach((v, i) =>
-      db()
-        .prepare(
-          "INSERT INTO session_items (id,session_id,infinitive,tense,grammatical_mode,order_index) VALUES (?,?,?,?,?,?)",
-        )
-        .run(id(), sessionId, v.infinitif, v.temps, v.mode, i),
-    );
-    p.contraintes.forEach((label, i) =>
-      db()
-        .prepare(
-          "INSERT INTO session_constraints (id,session_id,label,order_index) VALUES (?,?,?,?)",
-        )
-        .run(id(), sessionId, label, i),
-    );
+  // On ne lie class_id que si la classe existe ET appartient au prof (sinon la FK
+  // échouerait) ; le nom reste conservé en snapshot dans tous les cas.
+  const [classeOk] = p.classeId
+    ? await sql()`SELECT 1 FROM classes WHERE id = ${p.classeId} AND user_id = ${p.userId}`
+    : [undefined];
+  const classId = classeOk ? p.classeId : null;
+  await transaction(async (tx) => {
+    await tx`
+      INSERT INTO sessions (id, code, name, user_id, class_id, class_name, date, status, created_at)
+      VALUES (${sessionId}, ${code}, ${p.name}, ${p.userId},
+              ${classId}, ${p.classeNom}, ${p.date}, 'ouverte', ${Date.now()})
+    `;
+    for (let i = 0; i < p.verbes.length; i++) {
+      const v = p.verbes[i];
+      await tx`
+        INSERT INTO session_items (id, session_id, infinitive, tense, grammatical_mode, order_index)
+        VALUES (${id()}, ${sessionId}, ${v.infinitif}, ${v.temps}, ${v.mode}, ${i})
+      `;
+    }
+    for (let i = 0; i < p.contraintes.length; i++) {
+      await tx`
+        INSERT INTO session_constraints (id, session_id, label, order_index)
+        VALUES (${id()}, ${sessionId}, ${p.contraintes[i]}, ${i})
+      `;
+    }
   });
   return { code };
 }
 
 // --- Infos publiques (élève) : aucune réponse correcte ---
-export function evaluationParCode(code: string): EvaluationPublique | null {
-  const s = db()
-    .prepare("SELECT id,code,name,date,status FROM sessions WHERE code = ?")
-    .get(code) as
-    | { id: string; code: string; name: string; date: string; status: string }
-    | undefined;
+export async function evaluationParCode(
+  code: string,
+): Promise<EvaluationPublique | null> {
+  const [s] = await sql()`
+    SELECT id, code, name, date, status FROM sessions WHERE code = ${code}
+  `;
   if (!s) return null;
-  const items = db()
-    .prepare(
-      "SELECT infinitive,tense,grammatical_mode FROM session_items WHERE session_id = ? ORDER BY order_index",
-    )
-    .all(s.id) as {
+  const session = s as {
+    id: string;
+    code: string;
+    name: string;
+    date: string;
+    status: string;
+  };
+  const items = (await sql()`
+    SELECT infinitive, tense, grammatical_mode FROM session_items
+    WHERE session_id = ${session.id} ORDER BY order_index
+  `) as unknown as {
     infinitive: string;
     tense: string;
     grammatical_mode: string;
   }[];
-  const contraintes = db()
-    .prepare(
-      "SELECT label FROM session_constraints WHERE session_id = ? ORDER BY order_index",
-    )
-    .all(s.id) as { label: string }[];
+  const contraintes = (await sql()`
+    SELECT label FROM session_constraints WHERE session_id = ${session.id} ORDER BY order_index
+  `) as unknown as { label: string }[];
   return {
-    code: s.code,
-    name: s.name,
-    date: s.date,
-    status: s.status,
+    code: session.code,
+    name: session.name,
+    date: session.date,
+    status: session.status,
     verbes: items.map((it) => ({
       infinitif: it.infinitive,
       temps: it.tense,
@@ -122,47 +132,42 @@ export function evaluationParCode(code: string): EvaluationPublique | null {
 }
 
 // --- Envoi d'une copie (élève) ---
-export function enregistrerCopie(
+export async function enregistrerCopie(
   code: string,
   copie: CopieEntrante,
-): { id: string } | null {
-  const s = db()
-    .prepare("SELECT id,status FROM sessions WHERE code = ?")
-    .get(code) as { id: string; status: string } | undefined;
-  if (!s || s.status !== "ouverte") return null;
-  const contraintes = db()
-    .prepare(
-      "SELECT label FROM session_constraints WHERE session_id = ? ORDER BY order_index",
-    )
-    .all(s.id) as { label: string }[];
+): Promise<{ id: string } | null> {
+  const [s] = await sql()`SELECT id, status FROM sessions WHERE code = ${code}`;
+  if (!s) return null;
+  const session = s as { id: string; status: string };
+  if (session.status !== "ouverte") return null;
+  const contraintes = (await sql()`
+    SELECT label FROM session_constraints WHERE session_id = ${session.id} ORDER BY order_index
+  `) as unknown as { label: string }[];
   const submissionId = id();
-  transaction(() => {
-    db()
-      .prepare(
-        "INSERT INTO submissions (id,session_id,student_name,submitted_at) VALUES (?,?,?,?)",
-      )
-      .run(submissionId, s.id, copie.prenom, Date.now());
-    copie.tableaux.forEach((tab, ti) =>
-      tab.lignes.forEach((lg, li) =>
-        db()
-          .prepare(
-            "INSERT INTO answers (id,submission_id,item_order,line_index,pronoun,answer) VALUES (?,?,?,?,?,?)",
-          )
-          .run(id(), submissionId, ti, li, lg.pronom, lg.forme),
-      ),
-    );
-    db()
-      .prepare(
-        "INSERT INTO sentences (id,submission_id,sentence_text) VALUES (?,?,?)",
-      )
-      .run(id(), submissionId, copie.phrase);
-    contraintes.forEach((c) =>
-      db()
-        .prepare(
-          "INSERT INTO submission_constraints (id,submission_id,label,validated) VALUES (?,?,?,0)",
-        )
-        .run(id(), submissionId, c.label),
-    );
+  await transaction(async (tx) => {
+    await tx`
+      INSERT INTO submissions (id, session_id, student_name, submitted_at)
+      VALUES (${submissionId}, ${session.id}, ${copie.prenom}, ${Date.now()})
+    `;
+    for (let ti = 0; ti < copie.tableaux.length; ti++) {
+      const lignes = copie.tableaux[ti].lignes;
+      for (let li = 0; li < lignes.length; li++) {
+        await tx`
+          INSERT INTO answers (id, submission_id, item_order, line_index, pronoun, answer)
+          VALUES (${id()}, ${submissionId}, ${ti}, ${li}, ${lignes[li].pronom}, ${lignes[li].forme})
+        `;
+      }
+    }
+    await tx`
+      INSERT INTO sentences (id, submission_id, sentence_text)
+      VALUES (${id()}, ${submissionId}, ${copie.phrase})
+    `;
+    for (const c of contraintes) {
+      await tx`
+        INSERT INTO submission_constraints (id, submission_id, label, validated)
+        VALUES (${id()}, ${submissionId}, ${c.label}, 0)
+      `;
+    }
   });
   return { id: submissionId };
 }
@@ -181,25 +186,24 @@ type LigneSubmission = {
   forced_note: number | null;
 };
 
-function corriger(sub: LigneSubmission, items: LigneSession[]): CopieCorrigee {
-  const answers = db()
-    .prepare(
-      "SELECT item_order,line_index,pronoun,answer FROM answers WHERE submission_id = ?",
-    )
-    .all(sub.id) as {
+async function corriger(
+  sub: LigneSubmission,
+  items: LigneSession[],
+): Promise<CopieCorrigee> {
+  const answers = (await sql()`
+    SELECT item_order, line_index, pronoun, answer FROM answers WHERE submission_id = ${sub.id}
+  `) as unknown as {
     item_order: number;
     line_index: number;
     pronoun: string;
     answer: string;
   }[];
-  const sentence = db()
-    .prepare("SELECT sentence_text FROM sentences WHERE submission_id = ?")
-    .get(sub.id) as { sentence_text: string } | undefined;
-  const cons = db()
-    .prepare(
-      "SELECT label,validated FROM submission_constraints WHERE submission_id = ?",
-    )
-    .all(sub.id) as { label: string; validated: number }[];
+  const [sentence] = await sql()`
+    SELECT sentence_text FROM sentences WHERE submission_id = ${sub.id}
+  `;
+  const cons = (await sql()`
+    SELECT label, validated FROM submission_constraints WHERE submission_id = ${sub.id}
+  `) as unknown as { label: string; validated: number }[];
 
   let formesCorrectes = 0;
   const tableaux = items.map((it) => {
@@ -240,7 +244,7 @@ function corriger(sub: LigneSubmission, items: LigneSession[]): CopieCorrigee {
     prenom: sub.student_name,
     rendueLe: sub.submitted_at,
     tableaux,
-    phrase: sentence?.sentence_text ?? "",
+    phrase: (sentence as { sentence_text: string } | undefined)?.sentence_text ?? "",
     contraintes,
     formesCorrectes,
     brut,
@@ -253,64 +257,65 @@ function corriger(sub: LigneSubmission, items: LigneSession[]): CopieCorrigee {
 }
 
 // --- Copies corrigées (prof) ---
-export function copiesDe(code: string): CopieCorrigee[] {
-  const s = db()
-    .prepare("SELECT id FROM sessions WHERE code = ?")
-    .get(code) as { id: string } | undefined;
+export async function copiesDe(code: string): Promise<CopieCorrigee[]> {
+  const [s] = await sql()`SELECT id FROM sessions WHERE code = ${code}`;
   if (!s) return [];
-  const items = db()
-    .prepare(
-      "SELECT infinitive,tense,grammatical_mode,order_index FROM session_items WHERE session_id = ? ORDER BY order_index",
-    )
-    .all(s.id) as LigneSession[];
-  const subs = db()
-    .prepare(
-      "SELECT id,student_name,submitted_at,teacher_comment,forced_note FROM submissions WHERE session_id = ? ORDER BY submitted_at",
-    )
-    .all(s.id) as LigneSubmission[];
-  return subs.map((sub) => corriger(sub, items));
+  const sessionId = (s as { id: string }).id;
+  const items = (await sql()`
+    SELECT infinitive, tense, grammatical_mode, order_index FROM session_items
+    WHERE session_id = ${sessionId} ORDER BY order_index
+  `) as unknown as LigneSession[];
+  const subs = (await sql()`
+    SELECT id, student_name, submitted_at, teacher_comment, forced_note FROM submissions
+    WHERE session_id = ${sessionId} ORDER BY submitted_at
+  `) as unknown as LigneSubmission[];
+  return Promise.all(subs.map((sub) => corriger(sub, items)));
 }
 
 // --- Corrections du prof ---
-export function definirContraintesValidees(
+export async function definirContraintesValidees(
   submissionId: string,
   labelsValides: string[],
-): void {
-  const rows = db()
-    .prepare("SELECT id,label FROM submission_constraints WHERE submission_id = ?")
-    .all(submissionId) as { id: string; label: string }[];
-  transaction(() => {
-    rows.forEach((r) =>
-      db()
-        .prepare("UPDATE submission_constraints SET validated = ? WHERE id = ?")
-        .run(labelsValides.includes(r.label) ? 1 : 0, r.id),
-    );
+): Promise<void> {
+  const rows = (await sql()`
+    SELECT id, label FROM submission_constraints WHERE submission_id = ${submissionId}
+  `) as unknown as { id: string; label: string }[];
+  await transaction(async (tx) => {
+    for (const r of rows) {
+      await tx`
+        UPDATE submission_constraints SET validated = ${labelsValides.includes(r.label) ? 1 : 0}
+        WHERE id = ${r.id}
+      `;
+    }
   });
 }
 
-export function fixerCommentaire(submissionId: string, texte: string): void {
-  db()
-    .prepare("UPDATE submissions SET teacher_comment = ? WHERE id = ?")
-    .run(texte, submissionId);
+export async function fixerCommentaire(
+  submissionId: string,
+  texte: string,
+): Promise<void> {
+  await sql()`UPDATE submissions SET teacher_comment = ${texte} WHERE id = ${submissionId}`;
 }
 
-export function forcerNote(submissionId: string, note: number | null): void {
-  db()
-    .prepare("UPDATE submissions SET forced_note = ? WHERE id = ?")
-    .run(note, submissionId);
+export async function forcerNote(
+  submissionId: string,
+  note: number | null,
+): Promise<void> {
+  await sql()`UPDATE submissions SET forced_note = ${note} WHERE id = ${submissionId}`;
 }
 
-export function terminer(code: string): void {
-  db().prepare("UPDATE sessions SET status = 'terminee' WHERE code = ?").run(code);
+export async function terminer(code: string): Promise<void> {
+  await sql()`UPDATE sessions SET status = 'terminee' WHERE code = ${code}`;
 }
 
 // --- Historique par classe ---
-export function evaluationsDeClasse(classeId: string): ResumeEvaluation[] {
-  const sessions = db()
-    .prepare(
-      "SELECT id,code,name,date,status,class_id,class_name FROM sessions WHERE class_id = ? ORDER BY created_at DESC",
-    )
-    .all(classeId) as {
+export async function evaluationsDeClasse(
+  classeId: string,
+): Promise<ResumeEvaluation[]> {
+  const sessions = (await sql()`
+    SELECT id, code, name, date, status, class_id, class_name FROM sessions
+    WHERE class_id = ${classeId} ORDER BY created_at DESC
+  `) as unknown as {
     id: string;
     code: string;
     name: string;
@@ -319,38 +324,37 @@ export function evaluationsDeClasse(classeId: string): ResumeEvaluation[] {
     class_id: string;
     class_name: string;
   }[];
-  return sessions.map((s) => {
-    const items = db()
-      .prepare(
-        "SELECT infinitive,tense,grammatical_mode FROM session_items WHERE session_id = ? ORDER BY order_index",
-      )
-      .all(s.id) as {
-      infinitive: string;
-      tense: string;
-      grammatical_mode: string;
-    }[];
-    const cons = db()
-      .prepare(
-        "SELECT label FROM session_constraints WHERE session_id = ? ORDER BY order_index",
-      )
-      .all(s.id) as { label: string }[];
-    const n = db()
-      .prepare("SELECT COUNT(*) AS n FROM submissions WHERE session_id = ?")
-      .get(s.id) as { n: number };
-    return {
-      code: s.code,
-      name: s.name,
-      date: s.date,
-      status: s.status,
-      classeId: s.class_id,
-      classeNom: s.class_name,
-      verbes: items.map((it) => ({
-        infinitif: it.infinitive,
-        temps: it.tense,
-        mode: it.grammatical_mode,
-      })),
-      contraintes: cons.map((c) => c.label),
-      nbCopies: n.n,
-    };
-  });
+  return Promise.all(
+    sessions.map(async (s) => {
+      const items = (await sql()`
+        SELECT infinitive, tense, grammatical_mode FROM session_items
+        WHERE session_id = ${s.id} ORDER BY order_index
+      `) as unknown as {
+        infinitive: string;
+        tense: string;
+        grammatical_mode: string;
+      }[];
+      const cons = (await sql()`
+        SELECT label FROM session_constraints WHERE session_id = ${s.id} ORDER BY order_index
+      `) as unknown as { label: string }[];
+      const [n] = await sql()`
+        SELECT COUNT(*)::int AS n FROM submissions WHERE session_id = ${s.id}
+      `;
+      return {
+        code: s.code,
+        name: s.name,
+        date: s.date,
+        status: s.status,
+        classeId: s.class_id,
+        classeNom: s.class_name,
+        verbes: items.map((it) => ({
+          infinitif: it.infinitive,
+          temps: it.tense,
+          mode: it.grammatical_mode,
+        })),
+        contraintes: cons.map((c) => c.label),
+        nbCopies: (n as { n: number }).n,
+      };
+    }),
+  );
 }

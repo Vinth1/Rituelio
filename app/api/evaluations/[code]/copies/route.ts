@@ -25,7 +25,7 @@ export async function POST(request: Request, ctx: Ctx) {
   ) {
     return Response.json({ erreur: "Copie invalide" }, { status: 400 });
   }
-  const resultat = enregistrerCopie(code, {
+  const resultat = await enregistrerCopie(code, {
     prenom: body.prenom.trim(),
     tableaux: body.tableaux,
     phrase: typeof body.phrase === "string" ? body.phrase : "",
@@ -43,5 +43,5 @@ export async function GET(_request: Request, ctx: Ctx) {
   const refus = await refuserSiNonProf();
   if (refus) return refus;
   const { code } = await ctx.params;
-  return Response.json({ copies: copiesDe(code) });
+  return Response.json({ copies: await copiesDe(code) });
 }

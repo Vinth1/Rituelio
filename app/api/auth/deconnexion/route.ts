@@ -8,7 +8,7 @@ import { COOKIE_SESSION, supprimerSession } from "@/lib/serveur/auth";
 export async function POST() {
   const store = await cookies();
   const jeton = store.get(COOKIE_SESSION)?.value;
-  if (jeton) supprimerSession(jeton);
+  if (jeton) await supprimerSession(jeton);
   store.delete(COOKIE_SESSION);
   return Response.json({ ok: true });
 }

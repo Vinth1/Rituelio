@@ -1,9 +1,12 @@
 "use client";
 
-// Page de gestion des classes : créer plusieurs classes (pastilles), gérer
-// leurs élèves, et enregistrer dans le localStorage via un bouton « Enregistrer »
-// (pas de sauvegarde automatique).
-import { useEffect, useState } from "react";
+// Page de gestion des classes. Source de vérité = le backend (/api/classes) :
+// on charge depuis le serveur au montage et on ré-enregistre (PUT) à chaque
+// changement, avec un léger différé. On garde un MIROIR dans le localStorage
+// (enregistrerClasses) pour que les jeux pas encore migrés continuent de lire
+// les classes sans changement. Si le serveur est vide mais que le navigateur a
+// des classes locales, on propose de les importer.
+import { useEffect, useRef, useState } from "react";
 import {
   type Classe,
   type Eleve,
@@ -13,32 +16,82 @@ import {
 } from "@/lib/classes";
 import PanneauEleves from "./PanneauEleves";
 
+type EtatSauvegarde = "idle" | "en-cours" | "ok" | "erreur";
+
 export default function GestionClasses() {
   const [classes, setClasses] = useState<Classe[]>([]);
   const [classeActiveId, setClasseActiveId] = useState<string | null>(null);
   const [charge, setCharge] = useState(false);
   const [nomNouvelleClasse, setNomNouvelleClasse] = useState("");
+  const [sauvegarde, setSauvegarde] = useState<EtatSauvegarde>("idle");
+  const [peutImporter, setPeutImporter] = useState(false);
+  // Dernier état sérialisé envoyé/chargé : évite un PUT inutile juste après le chargement.
+  const dernierEnvoi = useRef<string>("");
 
-  // Chargement initial depuis le localStorage (côté client uniquement). On initialise
-  // dans un effet — et non en valeur d'état — pour éviter un décalage d'hydratation :
-  // le serveur n'a pas accès au localStorage (faux positif de set-state-in-effect).
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Chargement initial depuis le backend (dans un effet : la requête a besoin du
+  // cookie de session, indisponible au rendu serveur).
   useEffect(() => {
-    const initiales = chargerClasses();
-    setClasses(initiales);
-    setClasseActiveId(initiales[0]?.id ?? null);
-    setCharge(true);
+    let actif = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/classes");
+        if (r.ok && actif) {
+          const { classes: srv } = (await r.json()) as { classes: Classe[] };
+          const locales = chargerClasses();
+          if (srv.length === 0 && locales.length > 0) {
+            // Serveur vide + données locales → on propose l'import (miroir intact).
+            setPeutImporter(true);
+            dernierEnvoi.current = JSON.stringify([]);
+          } else {
+            setClasses(srv);
+            setClasseActiveId(srv[0]?.id ?? null);
+            enregistrerClasses(srv); // miroir local pour les jeux
+            dernierEnvoi.current = JSON.stringify(srv);
+          }
+        }
+      } catch {
+        /* réseau : on laissera l'utilisateur réessayer en modifiant */
+      } finally {
+        if (actif) setCharge(true);
+      }
+    })();
+    return () => {
+      actif = false;
+    };
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Enregistrement automatique : chaque changement est écrit dans le navigateur,
-  // pour que les jeux voient aussitôt les classes (aucun bouton à cliquer).
+  // Enregistrement (différé) vers le backend + miroir local, à chaque changement.
   useEffect(() => {
     if (!charge) return;
-    enregistrerClasses(classes);
+    const serialise = JSON.stringify(classes);
+    if (serialise === dernierEnvoi.current) return;
+    setSauvegarde("en-cours");
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch("/api/classes", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ classes }),
+        });
+        if (!r.ok) throw new Error("échec");
+        dernierEnvoi.current = serialise;
+        enregistrerClasses(classes); // miroir local pour les jeux
+        setSauvegarde("ok");
+      } catch {
+        setSauvegarde("erreur");
+      }
+    }, 500);
+    return () => clearTimeout(t);
   }, [classes, charge]);
 
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
+
+  function importerLocales() {
+    const locales = chargerClasses();
+    setClasses(locales);
+    setClasseActiveId(locales[0]?.id ?? null);
+    setPeutImporter(false);
+  }
 
   // --- Actions sur les classes ---
   function creerClasse(e: React.FormEvent) {
@@ -101,6 +154,13 @@ export default function GestionClasses() {
     ]);
   }
 
+  const messageSauvegarde: Record<EtatSauvegarde, string> = {
+    idle: "",
+    "en-cours": "Enregistrement…",
+    ok: "✓ Enregistré",
+    erreur: "⚠ Échec de l'enregistrement — réessaie en modifiant.",
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
@@ -109,17 +169,38 @@ export default function GestionClasses() {
         </h1>
         <p className="text-sm text-encre-douce">
           Gère tes classes et leurs élèves. Tes changements sont enregistrés
-          automatiquement et aussitôt disponibles dans les jeux.
+          automatiquement sur ton compte (et disponibles dans les jeux).
         </p>
       </header>
 
-      {/* Enregistrement automatique */}
+      {/* État de l'enregistrement */}
       <p
-        className="text-sm text-emerald-600 dark:text-emerald-400"
+        className={`text-sm ${
+          sauvegarde === "erreur"
+            ? "text-rose-600 dark:text-rose-400"
+            : "text-emerald-600 dark:text-emerald-400"
+        }`}
         aria-live="polite"
       >
-        ✓ Enregistré automatiquement
+        {messageSauvegarde[sauvegarde] || " "}
       </p>
+
+      {/* Proposition d'import des classes locales (une seule fois) */}
+      {peutImporter && (
+        <div className="flex flex-wrap items-center gap-3 rounded-carte border border-dashed border-ligne bg-fond p-4">
+          <p className="text-sm text-encre-douce">
+            Des classes sont enregistrées sur cet appareil. Les importer sur ton
+            compte ?
+          </p>
+          <button
+            type="button"
+            onClick={importerLocales}
+            className="shrink-0 rounded-full bg-principal px-4 py-1.5 text-sm font-semibold text-sur-principal transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+          >
+            Importer mes classes
+          </button>
+        </div>
+      )}
 
       {/* Pastilles des classes + création */}
       <div className="flex flex-col gap-3">

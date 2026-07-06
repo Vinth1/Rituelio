@@ -3,7 +3,7 @@
 // opaques : le cookie contient un jeton aléatoire ; on ne stocke en base que son
 // hash SHA-256 (si la base fuit, les jetons ne sont pas réutilisables).
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from "node:crypto";
-import { db } from "./db";
+import { sql } from "./db";
 
 // Identifiant du compte unique pour l'instant (la table accepte déjà plusieurs comptes).
 const IDENTIFIANT_PROF = "prof";
@@ -36,69 +36,67 @@ export function verifierMotDePasse(motDePasse: string, stocke: string): boolean 
 
 // --- Compte prof ---
 
-function profParIdentifiant(identifiant: string): ProfUser | null {
-  return (
-    (db()
-      .prepare("SELECT id, identifiant, password_hash FROM prof_users WHERE identifiant = ?")
-      .get(identifiant) as ProfUser | undefined) ?? null
-  );
+async function profParIdentifiant(identifiant: string): Promise<ProfUser | null> {
+  const [row] = await sql()`
+    SELECT id, identifiant, password_hash FROM prof_users WHERE identifiant = ${identifiant}
+  `;
+  return (row as ProfUser | undefined) ?? null;
 }
 
 // Crée le compte unique depuis PROF_MOT_DE_PASSE si la table est vide. Sans effet
 // si un compte existe déjà, ou si la variable d'environnement n'est pas définie.
-export function amorcerSiBesoin(): void {
-  const compte = db().prepare("SELECT COUNT(*) AS n FROM prof_users").get() as { n: number };
-  if (compte.n > 0) return;
+export async function amorcerSiBesoin(): Promise<void> {
+  const [compte] = await sql()`SELECT COUNT(*)::int AS n FROM prof_users`;
+  if ((compte as { n: number }).n > 0) return;
   const motDePasse = process.env.PROF_MOT_DE_PASSE;
   if (!motDePasse) return;
   const maintenant = Date.now();
-  db()
-    .prepare(
-      "INSERT INTO prof_users (id, identifiant, password_hash, created_at, updated_at) VALUES (?,?,?,?,?)",
-    )
-    .run(randomUUID(), IDENTIFIANT_PROF, hacherMotDePasse(motDePasse), maintenant, maintenant);
+  await sql()`
+    INSERT INTO prof_users (id, identifiant, password_hash, created_at, updated_at)
+    VALUES (${randomUUID()}, ${IDENTIFIANT_PROF}, ${hacherMotDePasse(motDePasse)}, ${maintenant}, ${maintenant})
+  `;
 }
 
 // True si au moins un compte prof est configuré (après amorçage éventuel).
-export function compteProfConfigure(): boolean {
-  amorcerSiBesoin();
-  const compte = db().prepare("SELECT COUNT(*) AS n FROM prof_users").get() as { n: number };
-  return compte.n > 0;
+export async function compteProfConfigure(): Promise<boolean> {
+  await amorcerSiBesoin();
+  const [compte] = await sql()`SELECT COUNT(*)::int AS n FROM prof_users`;
+  return (compte as { n: number }).n > 0;
 }
 
 // Vérifie identifiant + mot de passe, renvoie l'utilisateur ou null.
-export function verifierConnexion(
+export async function verifierConnexion(
   identifiant: string,
   motDePasse: string,
-): ProfUser | null {
-  amorcerSiBesoin();
-  const user = profParIdentifiant(identifiant.trim());
+): Promise<ProfUser | null> {
+  await amorcerSiBesoin();
+  const user = await profParIdentifiant(identifiant.trim());
   if (!user) return null;
   return verifierMotDePasse(motDePasse, user.password_hash) ? user : null;
 }
 
 // Crée un nouveau compte prof (email + identifiant + mot de passe). Renvoie l'id
 // du compte, ou une erreur si l'identifiant ou l'email est déjà pris.
-export function creerCompte(p: {
+export async function creerCompte(p: {
   email: string;
   identifiant: string;
   motDePasse: string;
-}): { ok: true; userId: string } | { ok: false; erreur: string } {
+}): Promise<{ ok: true; userId: string } | { ok: false; erreur: string }> {
   const identifiant = p.identifiant.trim();
   const email = p.email.trim().toLowerCase();
-  if (profParIdentifiant(identifiant)) {
+  if (await profParIdentifiant(identifiant)) {
     return { ok: false, erreur: "Ce nom d'utilisateur est déjà pris." };
   }
-  if (db().prepare("SELECT 1 FROM prof_users WHERE email = ?").get(email)) {
+  const [dejaEmail] = await sql()`SELECT 1 FROM prof_users WHERE email = ${email}`;
+  if (dejaEmail) {
     return { ok: false, erreur: "Cet email est déjà utilisé." };
   }
   const userId = randomUUID();
   const maintenant = Date.now();
-  db()
-    .prepare(
-      "INSERT INTO prof_users (id, identifiant, email, password_hash, created_at, updated_at) VALUES (?,?,?,?,?,?)",
-    )
-    .run(userId, identifiant, email, hacherMotDePasse(p.motDePasse), maintenant, maintenant);
+  await sql()`
+    INSERT INTO prof_users (id, identifiant, email, password_hash, created_at, updated_at)
+    VALUES (${userId}, ${identifiant}, ${email}, ${hacherMotDePasse(p.motDePasse)}, ${maintenant}, ${maintenant})
+  `;
   return { ok: true, userId };
 }
 
@@ -113,47 +111,48 @@ export function verifierCleInscription(cle: string): boolean {
 }
 
 // Change le mot de passe d'un compte (re-haché en base).
-export function changerMotDePasse(userId: string, nouveau: string): void {
-  db()
-    .prepare("UPDATE prof_users SET password_hash = ?, updated_at = ? WHERE id = ?")
-    .run(hacherMotDePasse(nouveau), Date.now(), userId);
+export async function changerMotDePasse(userId: string, nouveau: string): Promise<void> {
+  await sql()`
+    UPDATE prof_users SET password_hash = ${hacherMotDePasse(nouveau)}, updated_at = ${Date.now()}
+    WHERE id = ${userId}
+  `;
 }
 
 // Change le nom d'utilisateur d'un compte (≥ 3 caractères, unique).
-export function changerIdentifiant(
+export async function changerIdentifiant(
   userId: string,
   nouveau: string,
-): { ok: true } | { ok: false; raison: "court" | "pris" } {
+): Promise<{ ok: true } | { ok: false; raison: "court" | "pris" }> {
   const identifiant = nouveau.trim();
   if (identifiant.length < 3) return { ok: false, raison: "court" };
-  const existant = db()
-    .prepare("SELECT id FROM prof_users WHERE identifiant = ?")
-    .get(identifiant) as { id: string } | undefined;
-  if (existant && existant.id !== userId) return { ok: false, raison: "pris" };
-  db()
-    .prepare("UPDATE prof_users SET identifiant = ?, updated_at = ? WHERE id = ?")
-    .run(identifiant, Date.now(), userId);
+  const [existant] = await sql()`
+    SELECT id FROM prof_users WHERE identifiant = ${identifiant}
+  `;
+  if (existant && (existant as { id: string }).id !== userId) {
+    return { ok: false, raison: "pris" };
+  }
+  await sql()`
+    UPDATE prof_users SET identifiant = ${identifiant}, updated_at = ${Date.now()}
+    WHERE id = ${userId}
+  `;
   return { ok: true };
 }
 
-export function userParId(userId: string): ProfUser | null {
-  return (
-    (db()
-      .prepare("SELECT id, identifiant, password_hash FROM prof_users WHERE id = ?")
-      .get(userId) as ProfUser | undefined) ?? null
-  );
+export async function userParId(userId: string): Promise<ProfUser | null> {
+  const [row] = await sql()`
+    SELECT id, identifiant, password_hash FROM prof_users WHERE id = ${userId}
+  `;
+  return (row as ProfUser | undefined) ?? null;
 }
 
 // Infos affichables d'un compte (pseudo + email), sans le hash du mot de passe.
-export function infosCompte(
+export async function infosCompte(
   userId: string,
-): { identifiant: string; email: string | null } | null {
-  return (
-    (db()
-      .prepare("SELECT identifiant, email FROM prof_users WHERE id = ?")
-      .get(userId) as { identifiant: string; email: string | null } | undefined) ??
-    null
-  );
+): Promise<{ identifiant: string; email: string | null } | null> {
+  const [row] = await sql()`
+    SELECT identifiant, email FROM prof_users WHERE id = ${userId}
+  `;
+  return (row as { identifiant: string; email: string | null } | undefined) ?? null;
 }
 
 // --- Sessions ---
@@ -163,33 +162,33 @@ function hashJeton(jeton: string): string {
 }
 
 // Crée une session pour `userId` et renvoie le jeton brut (à poser dans le cookie).
-export function creerSession(userId: string): string {
+export async function creerSession(userId: string): Promise<string> {
   const jeton = randomBytes(32).toString("hex");
   const maintenant = Date.now();
-  db()
-    .prepare(
-      "INSERT INTO prof_sessions (id, user_id, created_at, expires_at) VALUES (?,?,?,?)",
-    )
-    .run(hashJeton(jeton), userId, maintenant, maintenant + DUREE_SESSION_MS);
+  await sql()`
+    INSERT INTO prof_sessions (id, user_id, created_at, expires_at)
+    VALUES (${hashJeton(jeton)}, ${userId}, ${maintenant}, ${maintenant + DUREE_SESSION_MS})
+  `;
   return jeton;
 }
 
 // Renvoie le userId si le jeton correspond à une session valide (non expirée).
-// Purge au passage les sessions expirées correspondantes.
-export function userIdDeSession(jeton: string): string | null {
-  const ligne = db()
-    .prepare("SELECT user_id, expires_at FROM prof_sessions WHERE id = ?")
-    .get(hashJeton(jeton)) as { user_id: string; expires_at: number } | undefined;
+// Purge au passage la session expirée correspondante.
+export async function userIdDeSession(jeton: string): Promise<string | null> {
+  const [ligne] = await sql()`
+    SELECT user_id, expires_at FROM prof_sessions WHERE id = ${hashJeton(jeton)}
+  `;
   if (!ligne) return null;
-  if (ligne.expires_at < Date.now()) {
-    db().prepare("DELETE FROM prof_sessions WHERE id = ?").run(hashJeton(jeton));
+  const { user_id, expires_at } = ligne as { user_id: string; expires_at: number };
+  if (expires_at < Date.now()) {
+    await sql()`DELETE FROM prof_sessions WHERE id = ${hashJeton(jeton)}`;
     return null;
   }
-  return ligne.user_id;
+  return user_id;
 }
 
-export function supprimerSession(jeton: string): void {
-  db().prepare("DELETE FROM prof_sessions WHERE id = ?").run(hashJeton(jeton));
+export async function supprimerSession(jeton: string): Promise<void> {
+  await sql()`DELETE FROM prof_sessions WHERE id = ${hashJeton(jeton)}`;
 }
 
 // Métadonnées de session (utiles ailleurs si besoin d'éviter un import cyclique).

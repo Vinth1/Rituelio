@@ -26,13 +26,13 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const user = userParId(session.userId);
+  const user = await userParId(session.userId);
   if (!user || !verifierMotDePasse(actuel, user.password_hash)) {
     return Response.json(
       { erreur: "Mot de passe actuel incorrect." },
       { status: 403 },
     );
   }
-  changerMotDePasse(user.id, nouveau);
+  await changerMotDePasse(user.id, nouveau);
   return Response.json({ ok: true });
 }

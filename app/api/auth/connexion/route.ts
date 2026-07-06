@@ -25,14 +25,14 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const user = verifierConnexion(identifiant, motDePasse);
+  const user = await verifierConnexion(identifiant, motDePasse);
   if (!user) {
     return Response.json(
       { erreur: "Identifiant ou mot de passe incorrect." },
       { status: 401 },
     );
   }
-  const jeton = creerSession(user.id);
+  const jeton = await creerSession(user.id);
   (await cookies()).set(COOKIE_SESSION, jeton, {
     httpOnly: true,
     sameSite: "lax",
