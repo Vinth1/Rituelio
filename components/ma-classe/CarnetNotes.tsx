@@ -334,13 +334,27 @@ export default function CarnetNotes() {
           <div className="flex flex-col gap-3">
             {/* Barre d'outils */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setFormTache({})}
-                className="rounded-full bg-principal px-4 py-2 text-sm font-semibold text-sur-principal transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
-              >
-                + Tâche
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormTache({})}
+                  className="rounded-full bg-principal px-4 py-2 text-sm font-semibold text-sur-principal transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                >
+                  + Tâche
+                </button>
+                <a
+                  href={`/api/ma-classe/carnet/export?matiereId=${matiereId}&trimestre=${trimestre}`}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                >
+                  ⬇ Excel — T{trimestre}
+                </a>
+                <a
+                  href={`/api/ma-classe/carnet/export?matiereId=${matiereId}&tout=1`}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                >
+                  ⬇ Excel — 3 trimestres
+                </a>
+              </div>
               {taches.length > 0 && (
                 <span
                   className={`rounded-full px-3 py-1 text-sm font-medium ${
