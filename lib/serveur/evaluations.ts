@@ -62,11 +62,17 @@ export async function creerEvaluation(p: {
 }): Promise<{ code: string }> {
   const code = await genererCode(p.classeNom);
   const sessionId = id();
+  // On ne lie class_id que si la classe existe ET appartient au prof (sinon la FK
+  // échouerait) ; le nom reste conservé en snapshot dans tous les cas.
+  const [classeOk] = p.classeId
+    ? await sql()`SELECT 1 FROM classes WHERE id = ${p.classeId} AND user_id = ${p.userId}`
+    : [undefined];
+  const classId = classeOk ? p.classeId : null;
   await transaction(async (tx) => {
     await tx`
       INSERT INTO sessions (id, code, name, user_id, class_id, class_name, date, status, created_at)
       VALUES (${sessionId}, ${code}, ${p.name}, ${p.userId},
-              ${p.classeId || null}, ${p.classeNom}, ${p.date}, 'ouverte', ${Date.now()})
+              ${classId}, ${p.classeNom}, ${p.date}, 'ouverte', ${Date.now()})
     `;
     for (let i = 0; i < p.verbes.length; i++) {
       const v = p.verbes[i];
