@@ -31,6 +31,19 @@ export function couleurBande(couleur: string): string {
   return BANDES[couleur] ?? BANDE_DEFAUT;
 }
 
+// Accents visuellement distincts, dans un ordre stable. Sert à colorer par index
+// des entités sans couleur propre (ex. les classes dans l'emploi du temps) :
+// couleurBande(CLES_ACCENT[index % CLES_ACCENT.length]).
+export const CLES_ACCENT = [
+  "amber",
+  "teal",
+  "blue",
+  "coral",
+  "pink",
+  "green",
+  "purple",
+] as const;
+
 // Bannière « rituel à la une » : fond vif, pensé pour du texte blanc (gros titre).
 const BANNIERES: Record<string, string> = {
   amber: "bg-amber-600 dark:bg-amber-700",

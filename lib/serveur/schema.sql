@@ -127,13 +127,16 @@ CREATE TABLE IF NOT EXISTS creneaux (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
   classe_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  matiere_id TEXT REFERENCES matieres(id) ON DELETE SET NULL,
+  matiere_id TEXT REFERENCES matieres(id) ON DELETE SET NULL,  -- réservé (futur carnet)
+  matiere TEXT NOT NULL DEFAULT '',    -- libellé matière en saisie libre
   jour INTEGER NOT NULL CHECK (jour BETWEEN 1 AND 5),  -- lundi..vendredi
   heure_debut TEXT NOT NULL,           -- "08:45"
   heure_fin TEXT NOT NULL,             -- "09:30"
   salle TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_creneaux_classe ON creneaux(classe_id);
+-- Bases déjà créées avant l'ajout du libellé libre : colonne ajoutée après coup.
+ALTER TABLE creneaux ADD COLUMN IF NOT EXISTS matiere TEXT NOT NULL DEFAULT '';
 CREATE TABLE IF NOT EXISTS prepas_cours (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
