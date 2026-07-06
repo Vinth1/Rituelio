@@ -103,3 +103,16 @@ fiche/jeu = un nouvel objet dans le tableau `jeux`.
 5. Recherche + filtre par catégorie.
 6. Mise en ligne (Vercel).
 7. Itérations : nouveaux jeux, page d'accueil publique, etc.
+
+## Conventions de travail (toujours appliquer)
+
+- Branche `vinth`, à jour de `main` avant de commencer. Commits clairs, push,
+  PR vers `main`. **NE JAMAIS merger** : le prof relit et merge.
+- Lire `AGENTS.md` (Next 16 : breaking changes).
+- Tailwind v4 : jamais de classes construites dynamiquement.
+- Respecter le thème clair/sombre (next-themes) et le style du projet
+  (cartes arrondies, Fredoka/Nunito, couleurs via `lib/couleurs.ts`).
+- Toutes les données de l'espace prof et de « Ma classe » sont servies
+  uniquement aux requêtes authentifiées (élèves mineurs, RGPD).
+- Les specs des grandes fonctionnalités vivent dans `docs/`
+  (`brief-ma-classe.md` = plan par PR de la catégorie « Ma classe »).
