@@ -213,3 +213,105 @@ CREATE INDEX IF NOT EXISTS idx_consequences_fait ON consequences(fait_id);
 -- Index pour le dashboard « en retard / à traiter » (par prof, statut, échéance).
 CREATE INDEX IF NOT EXISTS idx_consequences_dashboard
   ON consequences(user_id, statut, echeance_iso);
+
+-- ============================================================================
+-- Module « Évaluations » générique (namespace `epreuves`) — voir le cadrage.
+-- Une ÉPREUVE est un modèle réutilisable ; une PASSATION est un lancement
+-- (code + classe + statut) dont les questions sont FIGÉES au lancement, pour
+-- qu'éditer le modèle plus tard ne change jamais les copies déjà rendues.
+-- Config type-spécifique + bonnes réponses en JSONB → types de question
+-- extensibles sans migration. Cloisonnement `user_id` ; la note est recalculée
+-- à la lecture (rien de stocké côté note, hors correction manuelle / note forcée).
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS epreuves (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  titre TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  melange_questions BOOLEAN NOT NULL DEFAULT false,  -- mélange l'ordre par élève
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_epreuves_user ON epreuves(user_id);
+
+CREATE TABLE IF NOT EXISTS epreuve_questions (
+  id TEXT PRIMARY KEY,
+  epreuve_id TEXT NOT NULL REFERENCES epreuves(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,                   -- clé de plugin : 'qcm', 'reponse-courte', …
+  enonce TEXT NOT NULL DEFAULT '',
+  points NUMERIC NOT NULL DEFAULT 1,
+  config JSONB NOT NULL DEFAULT '{}',   -- config type-spécifique + bonnes réponses (secret)
+  ordre INTEGER NOT NULL,
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_epreuve_questions_epreuve ON epreuve_questions(epreuve_id);
+
+CREATE TABLE IF NOT EXISTS epreuve_medias (
+  id TEXT PRIMARY KEY,
+  epreuve_id TEXT NOT NULL REFERENCES epreuves(id) ON DELETE CASCADE,
+  question_id TEXT REFERENCES epreuve_questions(id) ON DELETE CASCADE,  -- NULL = média d'intro
+  genre TEXT NOT NULL CHECK (genre IN ('image', 'audio', 'video', 'lien')),
+  source TEXT NOT NULL CHECK (source IN ('url', 'youtube', 'upload')),
+  url TEXT NOT NULL,                    -- URL externe (v1) ou clé de blob (upload, PR ultérieure)
+  debut_s INTEGER,                      -- YouTube : début (secondes)
+  fin_s INTEGER,                        -- YouTube : fin (secondes)
+  mime TEXT,
+  taille_octets BIGINT,
+  legende TEXT,
+  ordre INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_epreuve_medias_epreuve ON epreuve_medias(epreuve_id);
+CREATE INDEX IF NOT EXISTS idx_epreuve_medias_question ON epreuve_medias(question_id);
+
+-- Un lancement : code + classe + statut. `epreuve_id` = source (contenu figé
+-- dans passation_questions), `class_name` = snapshot (comme la conjugaison).
+CREATE TABLE IF NOT EXISTS passations (
+  id TEXT PRIMARY KEY,
+  code TEXT NOT NULL UNIQUE,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  epreuve_id TEXT REFERENCES epreuves(id) ON DELETE SET NULL,
+  titre TEXT NOT NULL,                  -- snapshot du titre de l'épreuve
+  class_id TEXT REFERENCES classes(id) ON DELETE SET NULL,
+  class_name TEXT NOT NULL,             -- snapshot du nom de classe
+  date TEXT NOT NULL,                   -- ISO "2026-06-08"
+  status TEXT NOT NULL DEFAULT 'ouverte' CHECK (status IN ('ouverte', 'terminee')),
+  bareme_total NUMERIC NOT NULL,        -- Σ des points au lancement (barème)
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_passations_user ON passations(user_id);
+CREATE INDEX IF NOT EXISTS idx_passations_class ON passations(class_id);
+
+-- Snapshot FIGÉ des questions au lancement (correction stable même si le modèle évolue).
+CREATE TABLE IF NOT EXISTS passation_questions (
+  id TEXT PRIMARY KEY,
+  passation_id TEXT NOT NULL REFERENCES passations(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  enonce TEXT NOT NULL DEFAULT '',
+  points NUMERIC NOT NULL DEFAULT 1,
+  config JSONB NOT NULL DEFAULT '{}',   -- config + bonnes réponses FIGÉES
+  medias JSONB NOT NULL DEFAULT '[]',   -- médias figés (déjà résolus en URLs)
+  ordre INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_passation_questions_passation ON passation_questions(passation_id);
+
+CREATE TABLE IF NOT EXISTS copies (
+  id TEXT PRIMARY KEY,
+  passation_id TEXT NOT NULL REFERENCES passations(id) ON DELETE CASCADE,
+  eleve_prenom TEXT NOT NULL,           -- prénom libre anonyme (comme la conjugaison)
+  eleve_id TEXT REFERENCES eleves(id) ON DELETE SET NULL,  -- mapping carnet (ultérieur)
+  submitted_at BIGINT NOT NULL,
+  teacher_comment TEXT NOT NULL DEFAULT '',
+  forced_note NUMERIC                   -- note forcée GLOBALE ; NULL = note auto
+);
+CREATE INDEX IF NOT EXISTS idx_copies_passation ON copies(passation_id);
+
+CREATE TABLE IF NOT EXISTS reponses (
+  id TEXT PRIMARY KEY,
+  copie_id TEXT NOT NULL REFERENCES copies(id) ON DELETE CASCADE,
+  question_id TEXT NOT NULL REFERENCES passation_questions(id) ON DELETE CASCADE,
+  contenu JSONB NOT NULL DEFAULT '{}',  -- réponse brute de l'élève (type-spécifique)
+  points_manuels NUMERIC,               -- correction manuelle / override ; NULL = auto
+  commentaire TEXT NOT NULL DEFAULT ''
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reponses_copie_question ON reponses(copie_id, question_id);
+CREATE INDEX IF NOT EXISTS idx_reponses_copie ON reponses(copie_id);
