@@ -23,12 +23,20 @@ export default async function EspaceProf() {
             Choisis un rituel à préparer ou à projeter.
           </p>
         </div>
-        <Link
-          href="/classe"
-          className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
-        >
-          👥 Mes classes
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/prof/epreuves"
+            className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+          >
+            📝 Évaluations
+          </Link>
+          <Link
+            href="/classe"
+            className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+          >
+            👥 Mes classes
+          </Link>
+        </div>
       </div>
 
       <Catalogue jeux={jeux.filter((jeu) => !jeu.eleveSeulement)} />
