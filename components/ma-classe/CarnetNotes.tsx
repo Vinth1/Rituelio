@@ -395,6 +395,14 @@ export default function CarnetNotes() {
                             <span className="text-[11px] font-normal text-encre-douce">
                               /{t.bareme} · ×{t.ponderation}
                             </span>
+                            {t.origine === "rituelio" && (
+                              <span
+                                className="rounded-full bg-principal-clair px-1.5 py-px text-[10px] font-semibold text-principal"
+                                title="Importée depuis une activité Rituelio"
+                              >
+                                📔 Rituelio
+                              </span>
+                            )}
                           </button>
                         </th>
                       ))}
