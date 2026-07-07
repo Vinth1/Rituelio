@@ -9,6 +9,7 @@ import type {
   CopieCorrigee,
   EvaluationPublique,
 } from "@/lib/evaluation-types";
+import EnvoiVersCarnet from "./EnvoiVersCarnet";
 
 export default function SuiviEvaluation({
   code,
@@ -22,6 +23,7 @@ export default function SuiviEvaluation({
   const [copies, setCopies] = useState<CopieCorrigee[]>([]);
   const [chargement, setChargement] = useState(true);
   const [ouverteId, setOuverteId] = useState<string | null>(null);
+  const [envoiCarnet, setEnvoiCarnet] = useState(false);
 
   const chargerCopies = useCallback(async () => {
     try {
@@ -130,15 +132,26 @@ export default function SuiviEvaluation({
           {copies.length > 1 ? "s" : ""}
           {status === "ouverte" ? " · actualisation automatique" : ""}
         </span>
-        {status === "ouverte" && (
-          <button
-            type="button"
-            onClick={terminer}
-            className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
-          >
-            Terminer cette évaluation
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {copies.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setEnvoiCarnet(true)}
+              className={btnFantome}
+            >
+              <span aria-hidden="true">📔</span> Envoyer vers le carnet
+            </button>
+          )}
+          {status === "ouverte" && (
+            <button
+              type="button"
+              onClick={terminer}
+              className="rounded-full bg-principal px-5 py-2 text-sm font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+            >
+              Terminer cette évaluation
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Liste des copies */}
@@ -314,6 +327,10 @@ export default function SuiviEvaluation({
             .map((v) => `${v.infinitif} (${v.temps})`)
             .join("  ·  ")}
         </p>
+      )}
+
+      {envoiCarnet && (
+        <EnvoiVersCarnet code={code} onFerme={() => setEnvoiCarnet(false)} />
       )}
     </div>
   );
