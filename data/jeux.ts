@@ -8,7 +8,9 @@ export type CategorieJeu =
   | "lexique"
   | "orthographe"
   | "expression-orale"
-  | "culture-francophone";
+  | "culture-francophone"
+  | "questions-de-cours"
+  | "outils-de-classe";
 
 export type Jeu = {
   id: string;                 // slug unique, ex : "morpion-des-verbes"
@@ -143,5 +145,38 @@ export const jeux: Jeu[] = [
     couleur: "green",
     composant: "ConjugaisonEleve",
     eleveSeulement: true,
+  },
+  {
+    id: "questions-de-cours",
+    titre: "Questions de cours",
+    categorie: "questions-de-cours",
+    type: "jouable",
+    resume: "Interrogation orale à la roue",
+    icone: "🎯",
+    couleur: "violet",
+    duree: "15 min",
+    composant: "QuestionsDeCours",
+    profSeulement: true,
+    objectifs: [
+      "Réactiver les connaissances du cours (français, sciences sociales)",
+      "Interroger toute la classe équitablement grâce à la roue du hasard",
+    ],
+    aide: "Choisis une classe (gérée dans « Mes classes ») et une catégorie, puis lance le questionnaire : la pioche désigne un élève pour chaque question, sans réinterroger personne tant que toute la classe n'est pas passée. Le questionnaire s'arrête avec « Terminer » ou automatiquement quand chacun a répondu au même nombre de questions ; le tableau des scores s'affiche alors (ex. 1/2 = 1 bonne réponse sur 2 questions posées).",
+  },
+  {
+    id: "roue-du-hasard",
+    titre: "Roue du hasard",
+    categorie: "outils-de-classe",
+    type: "jouable",
+    resume: "Désigne un élève au sort",
+    icone: "🎡",
+    couleur: "pink",
+    composant: "RoueDuHasard",
+    profSeulement: true,
+    objectifs: [
+      "Désigner un élève de façon équitable et ludique",
+      "Faire participer toute la classe (option « ne pas répéter »)",
+    ],
+    aide: "Choisis une classe (gérée dans « Mes classes ») et lance la roue pour désigner un élève. Coche « ne pas répéter » pour passer toute la classe sans doublon, puis « Recommencer » pour repartir de zéro.",
   },
 ];

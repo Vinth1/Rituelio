@@ -8,7 +8,9 @@ import ConjugaisonEntrainement from "./ConjugaisonEntrainement";
 import DefiLecture from "./DefiLecture";
 import MotDuJour from "./MotDuJour";
 import Pendu from "./Pendu";
+import QuestionsDeCours from "./QuestionsDeCours";
 import QuizCulture from "./QuizCulture";
+import RoueDuHasard from "./RoueDuHasard";
 
 export const JEUX_JOUABLES: Record<string, ComponentType> = {
   ChaineLexicale,
@@ -17,5 +19,7 @@ export const JEUX_JOUABLES: Record<string, ComponentType> = {
   DefiLecture,
   MotDuJour,
   Pendu,
+  QuestionsDeCours,
   QuizCulture,
+  RoueDuHasard,
 };
