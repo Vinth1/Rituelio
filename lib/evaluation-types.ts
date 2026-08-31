@@ -2,7 +2,21 @@
 // `node:sqlite`). Importés par la couche serveur (`lib/serveur/evaluations.ts`)
 // ET par les composants client (page élève, suivi prof).
 
-export type VerbeRef = { infinitif: string; temps: string; mode: string };
+// Formes attendues figées à la création d'une évaluation (colonne JSONB
+// `session_items.formes`). C'est le corrigé : il ne quitte jamais le serveur
+// vers l'élève.
+export type FormesFigees = {
+  formes: string[]; // les 6 personnes
+  lignes?: number[]; // lignes réellement demandées (défaut : les 6)
+  variantes?: (string[] | null)[]; // autres formes acceptées, par ligne
+};
+
+export type VerbeRef = {
+  infinitif: string;
+  temps: string;
+  mode: string;
+  formes?: FormesFigees;
+};
 
 export type LigneSaisie = { pronom: string; forme: string };
 

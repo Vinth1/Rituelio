@@ -51,9 +51,9 @@ export const jeux: Jeu[] = [
     profSeulement: true,
     objectifs: [
       "Lire à voix haute des mots difficiles (lettres muettes, consonnes doublées, graphèmes complexes)",
-      "Repérer les pièges de prononciation du français",
+      "Repérer les pièges de prononciation et d'orthographe du français",
     ],
-    aide: "Choisis une classe, distribue un mot à chacun (dé global) ou retire un mot pour un élève. Fais lire chaque mot à voix haute ; l'indice sous le mot aide à corriger la lecture.",
+    aide: "Choisis une classe et le niveau (du CM1 à la 4ᵉ : le tirage inclut les niveaux inférieurs), puis distribue un mot à chacun (dé global) ou retire un mot pour un élève. Fais lire chaque mot à voix haute, puis écrire au tableau.",
   },
   {
     id: "quiz-culture",

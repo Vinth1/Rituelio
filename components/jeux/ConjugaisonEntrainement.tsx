@@ -7,9 +7,16 @@
 // élève au hasard (avec une petite animation). La section « Ma phrase » fait
 // produire une phrase utilisant les 2 verbes sous contraintes. La séance terminée
 // est enregistrée dans un historique par classe (localStorage).
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { verbes, type Conjugaison, type Verbe } from "@/data/verbes";
+import {
+  conjuguer,
+  trouverEntree,
+  verbes,
+  type Conjugaison,
+  type EntreeVerbe,
+} from "@/data/verbes";
+import { TEMPS_COLLEGE, cleTempsMode, libelleTempsMode } from "@/lib/conjugueur";
 import { contraintesPhrase } from "@/data/contraintes-phrase";
 import { type Classe, chargerClasses, nouvelId } from "@/lib/classes";
 import {
@@ -19,15 +26,37 @@ import {
 } from "@/lib/historique-conjugaison";
 import { ligneCorrecte } from "@/lib/conjugaison";
 import { couleurBande } from "@/lib/couleurs";
+import SelecteurVerbe from "@/components/conjugaison/SelecteurVerbe";
+import FormVerbePerso, {
+  type VerbePerso,
+} from "@/components/conjugaison/FormVerbePerso";
 import SuiviEvaluation from "@/components/evaluation/SuiviEvaluation";
 
 const ACCENT = "green"; // accent de couleur du rituel « conjugaison »
 
-type Phase = "menu" | "jeu" | "historique" | "suiviEval";
+type Phase = "menu" | "jeu" | "historique" | "suiviEval" | "nouveauVerbe";
 type ModeJeu = "entrainement" | "evaluation";
 type Ligne = { pronom: string; forme: string; valide: boolean | null };
-type Partie = { verbe: Verbe; conj: Conjugaison };
+type Partie = { entree: EntreeVerbe; conj: Conjugaison };
 type Contrainte = { label: string; validee: boolean };
+// Ce que le prof choisit pour un tableau : un verbe et un temps, indépendants
+// l'un de l'autre — tous les verbes ont désormais les mêmes temps.
+type Choix = { infinitif: string; temps: string; mode: string };
+
+// L'impératif n'a que 3 personnes et pas de pronom : il ne rentre pas dans le
+// tableau à 6 lignes du jeu. Le moteur sait le produire, l'écran viendra plus tard.
+const TEMPS_JEU = TEMPS_COLLEGE.filter((t) => t.mode !== "impératif");
+
+// Résout un choix en une partie jouable, ou null si le verbe est introuvable
+// ou si le moteur ne sait pas produire ce temps. `connus` contient la banque
+// ET les verbes personnalisés du prof.
+function resoudre(c: Choix, connus: EntreeVerbe[]): Partie | null {
+  const entree =
+    connus.find((v) => v.infinitif === c.infinitif) ?? trouverEntree(c.infinitif);
+  if (!entree) return null;
+  const conj = conjuguer(entree, c.temps, c.mode);
+  return conj ? { entree, conj } : null;
+}
 
 function lignesVides(): Ligne[] {
   return Array.from({ length: 6 }, () => ({
@@ -53,7 +82,7 @@ function TableauVerbe({
     <div className="rounded-carte border border-ligne p-4">
       <div className="mb-3 text-center">
         <p className="text-xl font-bold text-encre">
-          {partie.verbe.infinitif}
+          {partie.entree.infinitif}
         </p>
         <p className="text-sm text-encre-douce">
           {partie.conj.temps} · {partie.conj.mode}
@@ -110,10 +139,10 @@ function TableauVerbe({
 
 export default function ConjugaisonEntrainement() {
   // Réglages (menu)
-  const [verbe1Inf, setVerbe1Inf] = useState(verbes[0].infinitif);
-  const [conj1Idx, setConj1Idx] = useState(0);
-  const [verbe2Inf, setVerbe2Inf] = useState(verbes[1].infinitif);
-  const [conj2Idx, setConj2Idx] = useState(0);
+  const [choix, setChoix] = useState<[Choix, Choix]>([
+    { infinitif: "parler", temps: "présent", mode: "indicatif" },
+    { infinitif: "finir", temps: "présent", mode: "indicatif" },
+  ]);
   const [classeId, setClasseId] = useState<string | null>(null);
   const [date, setDate] = useState("");
   const [contraintesChoisies, setContraintesChoisies] = useState<string[]>([]);
@@ -127,6 +156,10 @@ export default function ConjugaisonEntrainement() {
   const [codeEval, setCodeEval] = useState<string | null>(null);
   const [creationEnCours, setCreationEnCours] = useState(false);
   const [aideOuverte, setAideOuverte] = useState(false);
+  const [verbesPerso, setVerbesPerso] = useState<VerbePerso[]>([]);
+  const [infinitifPropose, setInfinitifPropose] = useState("");
+  // Quel des deux tableaux a demandé la création : on y place le nouveau verbe.
+  const [slotCreation, setSlotCreation] = useState<0 | 1>(0);
 
   // Partie en cours
   const [parties, setParties] = useState<Partie[]>([]);
@@ -155,6 +188,21 @@ export default function ConjugaisonEntrainement() {
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Verbes personnalisés du prof (API). Un échec n'est pas bloquant : on
+  // travaille alors avec la seule banque officielle.
+  useEffect(() => {
+    let vivant = true;
+    fetch("/api/verbes-perso")
+      .then((r) => (r.ok ? r.json() : { verbes: [] }))
+      .then((data: { verbes?: VerbePerso[] }) => {
+        if (vivant) setVerbesPerso(data.verbes ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      vivant = false;
+    };
+  }, []);
+
   // Arrête l'animation de la roue et les minuteries d'effacement au démontage.
   useEffect(() => {
     const effaceurs = effaceursRef.current;
@@ -165,9 +213,51 @@ export default function ConjugaisonEntrainement() {
     };
   }, []);
 
+  // Banque officielle + verbes du prof. Les perso passent devant à infinitif
+  // égal : si le prof a créé « bouillir », c'est SA version qui compte.
+  const tousLesVerbes: EntreeVerbe[] = useMemo(() => {
+    const persoInf = new Set(verbesPerso.map((v) => v.infinitif));
+    return [
+      ...verbesPerso.map((v) => ({
+        infinitif: v.infinitif,
+        groupe: v.groupe,
+        auxiliaire: v.auxiliaire,
+        formesCorrigees: v.formesCorrigees,
+      })),
+      ...verbes.filter((v) => !persoInf.has(v.infinitif)),
+    ].sort((a, b) => a.infinitif.localeCompare(b.infinitif, "fr"));
+  }, [verbesPerso]);
+
+  const infinitifsPerso = useMemo(
+    () => new Set(verbesPerso.map((v) => v.infinitif)),
+    [verbesPerso],
+  );
+
   const eleves = classes.find((c) => c.id === classeId)?.eleves ?? [];
 
+  // Supprime un verbe du prof. Les tableaux qui le visaient retombent sur
+  // « parler », faute de quoi « Lancer » resterait bloqué sans rien dire.
+  async function supprimerVerbePerso(infinitif: string) {
+    const cible = verbesPerso.find((v) => v.infinitif === infinitif);
+    if (!cible) return;
+    const r = await fetch(`/api/verbes-perso/${cible.id}`, { method: "DELETE" });
+    if (!r.ok) return;
+    setVerbesPerso((prev) => prev.filter((v) => v.id !== cible.id));
+    setChoix((prev) => [
+      prev[0].infinitif === infinitif ? { ...prev[0], infinitif: "parler" } : prev[0],
+      prev[1].infinitif === infinitif ? { ...prev[1], infinitif: "parler" } : prev[1],
+    ]);
+  }
+
   // --- Actions (menu) ---
+  function majChoix(slot: 0 | 1, partiel: Partial<Choix>) {
+    setChoix((prev) => {
+      const suivant: [Choix, Choix] = [prev[0], prev[1]];
+      suivant[slot] = { ...prev[slot], ...partiel };
+      return suivant;
+    });
+  }
+
   function ajouterContrainteChoisie(label: string) {
     const propre = label.trim();
     if (!propre) return;
@@ -182,12 +272,9 @@ export default function ConjugaisonEntrainement() {
   }
 
   function lancer() {
-    const v1 = verbes.find((v) => v.infinitif === verbe1Inf) ?? verbes[0];
-    const v2 = verbes.find((v) => v.infinitif === verbe2Inf) ?? verbes[0];
-    setParties([
-      { verbe: v1, conj: v1.conjugaisons[conj1Idx] ?? v1.conjugaisons[0] },
-      { verbe: v2, conj: v2.conjugaisons[conj2Idx] ?? v2.conjugaisons[0] },
-    ]);
+    const resolues = choix.map((c) => resoudre(c, tousLesVerbes));
+    if (resolues.some((p) => p === null)) return;
+    setParties(resolues as Partie[]);
     setSaisies([lignesVides(), lignesVides()]);
     setEleveRoue(null);
     setPhrase("");
@@ -199,10 +286,8 @@ export default function ConjugaisonEntrainement() {
   // Crée une évaluation côté serveur, puis bascule sur l'écran de suivi.
   async function creerEvaluation() {
     if (!classeId || creationEnCours) return;
-    const v1 = verbes.find((v) => v.infinitif === verbe1Inf) ?? verbes[0];
-    const v2 = verbes.find((v) => v.infinitif === verbe2Inf) ?? verbes[0];
-    const c1 = v1.conjugaisons[conj1Idx] ?? v1.conjugaisons[0];
-    const c2 = v2.conjugaisons[conj2Idx] ?? v2.conjugaisons[0];
+    const resolues = choix.map((c) => resoudre(c, tousLesVerbes));
+    if (resolues.some((p) => p === null)) return;
     const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "";
     setCreationEnCours(true);
     try {
@@ -214,10 +299,21 @@ export default function ConjugaisonEntrainement() {
           classeId,
           classeNom,
           date,
-          verbes: [
-            { infinitif: v1.infinitif, temps: c1.temps, mode: c1.mode },
-            { infinitif: v2.infinitif, temps: c2.temps, mode: c2.mode },
-          ],
+          // On fige le corrigé maintenant : le serveur ne saurait pas
+          // reconstituer un verbe personnalisé, et une copie déjà rendue doit
+          // garder sa note même si la banque évolue.
+          verbes: (resolues as Partie[]).map((p) => ({
+            infinitif: p.entree.infinitif,
+            temps: p.conj.temps,
+            mode: p.conj.mode,
+            formes: {
+              formes: p.conj.formes,
+              lignes: p.conj.lignes,
+              variantes: p.conj.formes.map(
+                (_, i) => p.conj.variantes?.[i] ?? null,
+              ),
+            },
+          })),
           contraintes: contraintesChoisies,
         }),
       });
@@ -311,7 +407,7 @@ export default function ConjugaisonEntrainement() {
   function terminerSeance() {
     if (!classeId) return;
     const tableaux = parties.map((p, t) => ({
-      infinitif: p.verbe.infinitif,
+      infinitif: p.entree.infinitif,
       temps: p.conj.temps,
       mode: p.conj.mode,
       lignes: saisies[t].map((lg, i) => ({
@@ -339,6 +435,25 @@ export default function ConjugaisonEntrainement() {
     "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-encre-douce ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50";
   const champ =
     "rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal";
+
+  // ---------- Écran : nouveau verbe personnalisé ----------
+  if (phase === "nouveauVerbe") {
+    return (
+      <FormVerbePerso
+        infinitifPropose={infinitifPropose}
+        onAnnuler={() => setPhase("menu")}
+        onEnregistre={(v) => {
+          // Un ré-enregistrement du même infinitif remplace l'ancien.
+          setVerbesPerso((prev) => [
+            ...prev.filter((x) => x.infinitif !== v.infinitif),
+            v,
+          ]);
+          majChoix(slotCreation, { infinitif: v.infinitif });
+          setPhase("menu");
+        }}
+      />
+    );
+  }
 
   // ---------- Écran : suivi d'une évaluation ----------
   if (phase === "suiviEval" && codeEval) {
@@ -438,55 +553,47 @@ export default function ConjugaisonEntrainement() {
               ))}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {([0, 1] as const).map((slot) => {
-                const inf = slot === 0 ? verbe1Inf : verbe2Inf;
-                const idx = slot === 0 ? conj1Idx : conj2Idx;
-                const v = verbes.find((x) => x.infinitif === inf) ?? verbes[0];
-                return (
-                  <div
-                    key={slot}
-                    className="rounded-carte border border-ligne p-4"
+              {([0, 1] as const).map((slot) => (
+                <div
+                  key={slot}
+                  className="rounded-carte border border-ligne p-4"
+                >
+                  <p className="mb-2 text-sm font-semibold text-encre-douce">
+                    Verbe {slot + 1}
+                  </p>
+                  <SelecteurVerbe
+                    valeur={choix[slot].infinitif}
+                    onChange={(infinitif) => majChoix(slot, { infinitif })}
+                    verbes={tousLesVerbes}
+                    label={`Verbe ${slot + 1}`}
+                    onCreer={(propose) => {
+                      setInfinitifPropose(propose);
+                      setSlotCreation(slot);
+                      setPhase("nouveauVerbe");
+                    }}
+                    infinitifsPerso={infinitifsPerso}
+                    onSupprimer={supprimerVerbePerso}
+                  />
+                  {/* Le temps ne dépend plus du verbe : changer de verbe le conserve. */}
+                  <select
+                    value={cleTempsMode(choix[slot])}
+                    onChange={(e) => {
+                      const tm = TEMPS_JEU.find(
+                        (t) => cleTempsMode(t) === e.target.value,
+                      );
+                      if (tm) majChoix(slot, { temps: tm.temps, mode: tm.mode });
+                    }}
+                    aria-label={`Temps du verbe ${slot + 1}`}
+                    className={`mt-2 w-full ${champ}`}
                   >
-                    <p className="mb-2 text-sm font-semibold text-encre-douce">
-                      Verbe {slot + 1}
-                    </p>
-                    <select
-                      value={inf}
-                      onChange={(e) => {
-                        if (slot === 0) {
-                          setVerbe1Inf(e.target.value);
-                          setConj1Idx(0);
-                        } else {
-                          setVerbe2Inf(e.target.value);
-                          setConj2Idx(0);
-                        }
-                      }}
-                      className={`w-full ${champ}`}
-                    >
-                      {verbes.map((vb) => (
-                        <option key={vb.infinitif} value={vb.infinitif}>
-                          {vb.infinitif}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={idx}
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (slot === 0) setConj1Idx(n);
-                        else setConj2Idx(n);
-                      }}
-                      className={`mt-2 w-full ${champ}`}
-                    >
-                      {v.conjugaisons.map((c, ci) => (
-                        <option key={ci} value={ci}>
-                          {c.temps} · {c.mode}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
+                    {TEMPS_JEU.map((t) => (
+                      <option key={cleTempsMode(t)} value={cleTempsMode(t)}>
+                        {libelleTempsMode(t)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

@@ -60,6 +60,13 @@ CREATE TABLE IF NOT EXISTS session_items (
   order_index INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_session_items_session ON session_items(session_id);
+-- Formes attendues FIGÉES au lancement de l'évaluation. Indispensable pour les
+-- verbes personnalisés, que le serveur ne peut pas retrouver (ils appartiennent
+-- à un prof), et garantit qu'une copie déjà rendue garde sa note même si la
+-- banque ou le moteur évoluent. NULL sur les évaluations créées avant cette
+-- colonne : la correction retombe alors sur `trouverConjugaison`.
+-- C'est le CORRIGÉ : ne jamais l'exposer à l'élève (cf. `evaluationParCode`).
+ALTER TABLE session_items ADD COLUMN IF NOT EXISTS formes JSONB;
 CREATE TABLE IF NOT EXISTS session_constraints (
   id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -315,3 +322,22 @@ CREATE TABLE IF NOT EXISTS reponses (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_reponses_copie_question ON reponses(copie_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_reponses_copie ON reponses(copie_id);
+
+-- ===== Verbes personnalisés (conjugaison) =====
+-- Verbe ajouté par un prof, absent de data/verbes.ts. `formes` ne contient que
+-- les cases CORRIGÉES à la main (clé « mode|temps ») : le reste est régénéré par
+-- le moteur, si bien qu'un verbe perso profite des évolutions de celui-ci.
+-- Scopé user_id : un prof ne voit jamais les verbes d'un autre.
+CREATE TABLE IF NOT EXISTS verbes_perso (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  infinitif TEXT NOT NULL,
+  groupe TEXT NOT NULL DEFAULT '3e groupe'
+    CHECK (groupe IN ('1er groupe', '2e groupe', '3e groupe')),
+  auxiliaire TEXT NOT NULL DEFAULT 'avoir'
+    CHECK (auxiliaire IN ('avoir', 'être')),
+  formes JSONB NOT NULL DEFAULT '{}',
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_verbes_perso_unique ON verbes_perso(user_id, infinitif);

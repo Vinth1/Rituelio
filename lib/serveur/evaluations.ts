@@ -1,10 +1,12 @@
 // Couche d'accès aux évaluations (côté serveur). Lit/écrit dans Postgres et calcule
 // la correction (formes via la banque de verbes, note /20) à la lecture, pour
 // éviter des scores périmés. Module serveur uniquement (dépend de `./db`).
+import type postgres from "postgres";
 import { sql, transaction } from "./db";
 import {
   calculerNote,
-  formeEstCorrecte,
+  conjugaisonFigee,
+  formeAcceptee,
   trouverConjugaison,
 } from "@/lib/conjugaison";
 
@@ -77,8 +79,9 @@ export async function creerEvaluation(p: {
     for (let i = 0; i < p.verbes.length; i++) {
       const v = p.verbes[i];
       await tx`
-        INSERT INTO session_items (id, session_id, infinitive, tense, grammatical_mode, order_index)
-        VALUES (${id()}, ${sessionId}, ${v.infinitif}, ${v.temps}, ${v.mode}, ${i})
+        INSERT INTO session_items (id, session_id, infinitive, tense, grammatical_mode, order_index, formes)
+        VALUES (${id()}, ${sessionId}, ${v.infinitif}, ${v.temps}, ${v.mode}, ${i},
+                ${v.formes ? tx.json(v.formes as unknown as postgres.JSONValue) : null})
       `;
     }
     for (let i = 0; i < p.contraintes.length; i++) {
@@ -177,6 +180,7 @@ type LigneSession = {
   tense: string;
   grammatical_mode: string;
   order_index: number;
+  formes?: unknown; // JSONB : corrigé figé, absent sur les évaluations anciennes
 };
 type LigneSubmission = {
   id: string;
@@ -207,7 +211,11 @@ async function corriger(
 
   let formesCorrectes = 0;
   const tableaux = items.map((it) => {
-    const conj = trouverConjugaison(it.infinitive, it.tense, it.grammatical_mode);
+    // Le corrigé figé prime ; on ne retombe sur la banque que pour les
+    // évaluations créées avant la colonne `formes`.
+    const conj =
+      conjugaisonFigee(it.tense, it.grammatical_mode, it.formes) ??
+      trouverConjugaison(it.infinitive, it.tense, it.grammatical_mode);
     const lignes: LigneCorrigee[] = [];
     for (let li = 0; li < 6; li++) {
       const a = answers.find(
@@ -215,7 +223,7 @@ async function corriger(
       );
       const forme = a?.answer ?? "";
       const attendue = conj ? conj.formes[li] : "";
-      const correcte = conj ? formeEstCorrecte(forme, attendue) : false;
+      const correcte = conj ? formeAcceptee(forme, conj, li) : false;
       if (correcte) formesCorrectes += 1;
       lignes.push({ pronom: a?.pronoun ?? "", forme, attendue, correcte });
     }
@@ -262,7 +270,7 @@ export async function copiesDe(code: string): Promise<CopieCorrigee[]> {
   if (!s) return [];
   const sessionId = (s as { id: string }).id;
   const items = (await sql()`
-    SELECT infinitive, tense, grammatical_mode, order_index FROM session_items
+    SELECT infinitive, tense, grammatical_mode, order_index, formes FROM session_items
     WHERE session_id = ${sessionId} ORDER BY order_index
   `) as unknown as LigneSession[];
   const subs = (await sql()`
