@@ -241,10 +241,20 @@ export default function ConjugaisonEntrainement() {
           classeId,
           classeNom,
           date,
-          verbes: choix.map((c) => ({
-            infinitif: c.infinitif,
-            temps: c.temps,
-            mode: c.mode,
+          // On fige le corrigé maintenant : le serveur ne saurait pas
+          // reconstituer un verbe personnalisé, et une copie déjà rendue doit
+          // garder sa note même si la banque évolue.
+          verbes: (resolues as Partie[]).map((p) => ({
+            infinitif: p.entree.infinitif,
+            temps: p.conj.temps,
+            mode: p.conj.mode,
+            formes: {
+              formes: p.conj.formes,
+              lignes: p.conj.lignes,
+              variantes: p.conj.formes.map(
+                (_, i) => p.conj.variantes?.[i] ?? null,
+              ),
+            },
           })),
           contraintes: contraintesChoisies,
         }),

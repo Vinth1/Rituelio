@@ -60,6 +60,13 @@ CREATE TABLE IF NOT EXISTS session_items (
   order_index INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_session_items_session ON session_items(session_id);
+-- Formes attendues FIGÉES au lancement de l'évaluation. Indispensable pour les
+-- verbes personnalisés, que le serveur ne peut pas retrouver (ils appartiennent
+-- à un prof), et garantit qu'une copie déjà rendue garde sa note même si la
+-- banque ou le moteur évoluent. NULL sur les évaluations créées avant cette
+-- colonne : la correction retombe alors sur `trouverConjugaison`.
+-- C'est le CORRIGÉ : ne jamais l'exposer à l'élève (cf. `evaluationParCode`).
+ALTER TABLE session_items ADD COLUMN IF NOT EXISTS formes JSONB;
 CREATE TABLE IF NOT EXISTS session_constraints (
   id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
