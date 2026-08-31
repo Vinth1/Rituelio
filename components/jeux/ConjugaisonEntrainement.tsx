@@ -26,6 +26,7 @@ import {
 } from "@/lib/historique-conjugaison";
 import { ligneCorrecte } from "@/lib/conjugaison";
 import { couleurBande } from "@/lib/couleurs";
+import SelecteurVerbe from "@/components/conjugaison/SelecteurVerbe";
 import SuiviEvaluation from "@/components/evaluation/SuiviEvaluation";
 
 const ACCENT = "green"; // accent de couleur du rituel « conjugaison »
@@ -473,18 +474,12 @@ export default function ConjugaisonEntrainement() {
                   <p className="mb-2 text-sm font-semibold text-encre-douce">
                     Verbe {slot + 1}
                   </p>
-                  <select
-                    value={choix[slot].infinitif}
-                    onChange={(e) => majChoix(slot, { infinitif: e.target.value })}
-                    aria-label={`Verbe ${slot + 1}`}
-                    className={`w-full ${champ}`}
-                  >
-                    {verbes.map((vb) => (
-                      <option key={vb.infinitif} value={vb.infinitif}>
-                        {vb.infinitif}
-                      </option>
-                    ))}
-                  </select>
+                  <SelecteurVerbe
+                    valeur={choix[slot].infinitif}
+                    onChange={(infinitif) => majChoix(slot, { infinitif })}
+                    verbes={verbes}
+                    label={`Verbe ${slot + 1}`}
+                  />
                   {/* Le temps ne dépend plus du verbe : changer de verbe le conserve. */}
                   <select
                     value={cleTempsMode(choix[slot])}
