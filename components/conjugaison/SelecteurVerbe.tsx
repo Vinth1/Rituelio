@@ -30,6 +30,8 @@ export default function SelecteurVerbe({
   verbes,
   label,
   onCreer,
+  infinitifsPerso,
+  onSupprimer,
 }: {
   valeur: string;
   onChange: (infinitif: string) => void;
@@ -37,6 +39,9 @@ export default function SelecteurVerbe({
   label: string;
   // Fourni seulement quand la création d'un verbe personnalisé est possible.
   onCreer?: (infinitifPropose: string) => void;
+  // Verbes du prof : signalés par une pastille et supprimables.
+  infinitifsPerso?: Set<string>;
+  onSupprimer?: (infinitif: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [saisie, setSaisie] = useState("");
@@ -226,9 +231,29 @@ export default function SelecteurVerbe({
                 }`}
               >
                 <span className="truncate">{v.infinitif}</span>
+                {infinitifsPerso?.has(v.infinitif) && (
+                  <span className="shrink-0 rounded-full bg-fond px-2 py-0.5 text-xs font-semibold text-principal">
+                    perso
+                  </span>
+                )}
                 <span className="ml-auto shrink-0 text-xs text-encre-douce">
                   {v.groupe}
                 </span>
+                {onSupprimer && infinitifsPerso?.has(v.infinitif) && (
+                  <button
+                    type="button"
+                    // Le clic ne doit pas aussi sélectionner le verbe.
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSupprimer(v.infinitif);
+                    }}
+                    aria-label={`Supprimer le verbe ${v.infinitif}`}
+                    title="Supprimer ce verbe"
+                    className="shrink-0 rounded-full px-1.5 text-encre-douce transition hover:text-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                  >
+                    ×
+                  </button>
+                )}
               </li>
             ))}
 
