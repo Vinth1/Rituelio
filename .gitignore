@@ -43,3 +43,6 @@ next-env.d.ts
 
 # base de données locale (mode évaluation)
 /.data/
+
+# journal du serveur de dev (npm run dev > dev.log)
+/dev.log
