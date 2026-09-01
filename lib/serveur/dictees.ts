@@ -6,15 +6,11 @@
 // est fait à l'affichage par `lib/dictee.ts`, si bien qu'une amélioration du
 // découpage profite aux dictées déjà déposées.
 import { sql } from "./db";
-import { normaliserTags } from "@/lib/dictee";
+import { normaliserTags, type Dictee } from "@/lib/dictee";
 
-export type Dictee = {
-  id: string;
-  titre: string;
-  texte: string;
-  tags: string[];
-  modifieeLe: number;
-};
+// Le type de sortie vit dans le module pur `lib/dictee.ts` : les composants
+// clients le réutilisent sans tirer ce module serveur dans leur bundle.
+export type { Dictee };
 
 export type DicteeEntrante = {
   titre: string;

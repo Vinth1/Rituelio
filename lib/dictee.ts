@@ -18,6 +18,16 @@ export type MotDictee = {
   apres: string; // ponctuation qui lui est accolée : « , », « ! »
 };
 
+// Une dictée telle que l'API la renvoie. Déclarée dans ce module pur pour que
+// les composants clients puissent la typer sans importer `lib/serveur/**`.
+export type Dictee = {
+  id: string;
+  titre: string;
+  texte: string;
+  tags: string[];
+  modifieeLe: number;
+};
+
 export const MAX_LONGUEUR_TAG = 32;
 export const MAX_TAGS = 12;
 
