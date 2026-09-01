@@ -1,19 +1,24 @@
 "use client";
 
 // Jeu jouable « Chaîne lexicale » (mode projection). Le prof choisit une classe,
-// un thème (champ lexical) et un mode. Tour à tour, un élève tiré au hasard donne
-// un mot du thème ; le prof le valide « Correct » (vert) ou « Hors thème » (rouge).
+// un thème (champ lexical, livré ou créé par lui) et un mode. Tour à tour, un
+// élève tiré au hasard donne un mot du thème ; le prof le valide « Correct »
+// (vert) ou « Hors thème » (rouge), et l'élève suivant est tiré automatiquement.
 // Deux modes :
 //  - Tour simple : chacun passe une fois ; à la fin, on compte les mots trouvés.
 //  - Élimination : un mot hors thème élimine l'élève ; le dernier en lice gagne.
-// Comparaison des doublons insensible à la casse et aux accents. État en mémoire.
-import { useEffect, useState } from "react";
+// Comparaison des doublons insensible à la casse et aux accents. État en mémoire,
+// sauf les thèmes personnalisés (localStorage, cf. lib/champs-perso.ts).
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { champsLexicaux } from "@/data/champs-lexicaux";
-import { type Classe, chargerClasses } from "@/lib/classes";
+import { type ChampLexical, champsLexicaux } from "@/data/champs-lexicaux";
+import { chargerChampsPerso, enregistrerChampsPerso } from "@/lib/champs-perso";
+import { type Classe, type Eleve, chargerClasses, nouvelId } from "@/lib/classes";
 import { couleurBande } from "@/lib/couleurs";
 
 const ACCENT = "purple"; // accent de couleur du rituel « lexique »
+// Valeur réservée du menu « Thème » : ouvre le champ de création d'un thème perso.
+const OPTION_NOUVEAU = "__perso";
 
 type Phase = "lancement" | "jeu" | "fin";
 type Statut = "correct" | "horsTheme";
@@ -33,12 +38,39 @@ function piocherAuHasard<T>(liste: T[]): T {
   return liste[Math.floor(Math.random() * liste.length)];
 }
 
+// Tire le prochain élève à partir d'un état passé explicitement, et non du state
+// React : `valider` enchaîne juste après un setState, où `elimines` serait encore
+// périmé (l'élève qu'on vient d'éliminer pourrait être retiré au sort). Renvoie
+// l'élève tiré, la liste des « déjà passés » à jour, et si la partie est finie.
+function tirerSuivant(args: {
+  eleves: Eleve[];
+  elimines: string[];
+  passes: string[];
+  courantId: string | null;
+  modeElimination: boolean;
+}): { id: string | null; passes: string[]; fin: boolean } {
+  const { eleves, elimines, passes, courantId, modeElimination } = args;
+  if (modeElimination) {
+    const enLice = eleves.filter((e) => !elimines.includes(e.id));
+    if (enLice.length <= 1) return { id: null, passes, fin: true };
+    const candidats = enLice.filter((e) => e.id !== courantId);
+    const choix = piocherAuHasard(candidats.length ? candidats : enLice);
+    return { id: choix.id, passes, fin: false };
+  }
+  const restants = eleves.filter((e) => !passes.includes(e.id));
+  if (restants.length === 0) return { id: null, passes, fin: true };
+  const choix = piocherAuHasard(restants);
+  return { id: choix.id, passes: [...passes, choix.id], fin: false };
+}
+
 export default function ChaineLexicale() {
   // Réglages (écran de lancement)
   const [classes, setClasses] = useState<Classe[]>([]);
   const [classeActiveId, setClasseActiveId] = useState<string | null>(null);
   const [charge, setCharge] = useState(false);
   const [themeId, setThemeId] = useState(champsLexicaux[0].id);
+  const [champsPerso, setChampsPerso] = useState<ChampLexical[]>([]);
+  const [nouveauTheme, setNouveauTheme] = useState("");
   const [modeElimination, setModeElimination] = useState(false);
 
   // Partie en cours
@@ -48,6 +80,8 @@ export default function ChaineLexicale() {
   const [passes, setPasses] = useState<string[]>([]); // tour simple : élèves déjà désignés
   const [elimines, setElimines] = useState<string[]>([]); // élimination : élèves sortis
   const [saisie, setSaisie] = useState("");
+  // Le champ de saisie garde le focus après chaque mot validé (confort au vidéoprojecteur).
+  const champSaisie = useRef<HTMLInputElement>(null);
 
   // Chargement des classes depuis le localStorage (côté client uniquement) : initialisé
   // dans un effet pour éviter un décalage d'hydratation (faux positif de set-state-in-effect).
@@ -56,6 +90,7 @@ export default function ChaineLexicale() {
     const initiales = chargerClasses();
     setClasses(initiales);
     setClasseActiveId(initiales[0]?.id ?? null);
+    setChampsPerso(chargerChampsPerso());
     setCharge(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -63,7 +98,10 @@ export default function ChaineLexicale() {
   // --- Dérivés ---
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
   const eleves = classeActive?.eleves ?? [];
-  const theme = champsLexicaux.find((t) => t.id === themeId) ?? champsLexicaux[0];
+  // Thèmes livrés + thèmes créés par le prof : une seule liste pour la sélection.
+  const tousLesThemes = [...champsLexicaux, ...champsPerso];
+  const theme = tousLesThemes.find((t) => t.id === themeId) ?? champsLexicaux[0];
+  const themePersoChoisi = champsPerso.some((t) => t.id === themeId);
   const eleveCourant = eleves.find((e) => e.id === eleveCourantId) ?? null;
   const enLice = eleves.filter((e) => !elimines.includes(e.id));
   const nbCorrects = mots.filter((m) => m.statut === "correct").length;
@@ -77,8 +115,37 @@ export default function ChaineLexicale() {
   }
 
   // --- Actions ---
+  // Ajoute un thème personnalisé, ou resélectionne l'existant si le libellé est
+  // déjà proposé (casse et accents ignorés).
+  function ajouterThemePerso() {
+    const libelle = nouveauTheme.trim();
+    if (!libelle) return;
+    const existant = tousLesThemes.find(
+      (t) => normaliser(t.theme) === normaliser(libelle),
+    );
+    if (existant) {
+      setThemeId(existant.id);
+      setNouveauTheme("");
+      return;
+    }
+    // Préfixe « perso- » : jamais de collision avec les ids livrés (animaux…).
+    const cree: ChampLexical = { id: `perso-${nouvelId()}`, theme: libelle };
+    const liste = [...champsPerso, cree];
+    setChampsPerso(liste);
+    enregistrerChampsPerso(liste);
+    setThemeId(cree.id);
+    setNouveauTheme("");
+  }
+
+  function supprimerThemePerso() {
+    const liste = champsPerso.filter((t) => t.id !== themeId);
+    setChampsPerso(liste);
+    enregistrerChampsPerso(liste);
+    setThemeId(champsLexicaux[0].id);
+  }
+
   function lancer() {
-    if (eleves.length === 0) return;
+    if (eleves.length === 0 || themeId === OPTION_NOUVEAU) return;
     setMots([]);
     setElimines([]);
     setSaisie("");
@@ -88,24 +155,23 @@ export default function ChaineLexicale() {
     setPhase("jeu");
   }
 
+  // Applique un tirage : élève désigné, « déjà passés », fin de partie éventuelle.
+  function appliquerTirage(tirage: ReturnType<typeof tirerSuivant>) {
+    setEleveCourantId(tirage.id);
+    setPasses(tirage.passes);
+    if (tirage.fin) setPhase("fin");
+  }
+
   function eleveSuivant() {
-    if (modeElimination) {
-      if (enLice.length <= 1) {
-        setPhase("fin");
-        return;
-      }
-      const candidats = enLice.filter((e) => e.id !== eleveCourantId);
-      setEleveCourantId(piocherAuHasard(candidats.length ? candidats : enLice).id);
-    } else {
-      const restants = eleves.filter((e) => !passes.includes(e.id));
-      if (restants.length === 0) {
-        setPhase("fin");
-        return;
-      }
-      const choix = piocherAuHasard(restants);
-      setEleveCourantId(choix.id);
-      setPasses((p) => [...p, choix.id]);
-    }
+    appliquerTirage(
+      tirerSuivant({
+        eleves,
+        elimines,
+        passes,
+        courantId: eleveCourantId,
+        modeElimination,
+      }),
+    );
   }
 
   function valider(statut: Statut) {
@@ -115,13 +181,22 @@ export default function ChaineLexicale() {
     setMots((prev) => [...prev, { mot, statut, eleveId: eleveCourantId, doublon }]);
     setSaisie("");
     // En mode élimination, un mot hors thème élimine l'élève courant.
-    if (modeElimination && statut === "horsTheme") {
-      const nouveauxElimines = [...elimines, eleveCourantId];
-      setElimines(nouveauxElimines);
-      setEleveCourantId(null);
-      const restants = eleves.filter((e) => !nouveauxElimines.includes(e.id));
-      if (restants.length <= 1) setPhase("fin");
-    }
+    const nouveauxElimines =
+      modeElimination && statut === "horsTheme"
+        ? [...elimines, eleveCourantId]
+        : elimines;
+    if (nouveauxElimines !== elimines) setElimines(nouveauxElimines);
+    // Le mot posé, on enchaîne : l'élève suivant est tiré au sort automatiquement.
+    appliquerTirage(
+      tirerSuivant({
+        eleves,
+        elimines: nouveauxElimines,
+        passes,
+        courantId: eleveCourantId,
+        modeElimination,
+      }),
+    );
+    champSaisie.current?.focus();
   }
 
   function reinitialiser() {
@@ -194,13 +269,72 @@ export default function ChaineLexicale() {
                 onChange={(e) => setThemeId(e.target.value)}
                 className="max-w-sm rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               >
-                {champsLexicaux.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.theme}
-                  </option>
-                ))}
+                <optgroup label="Thèmes proposés">
+                  {champsLexicaux.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.theme}
+                    </option>
+                  ))}
+                </optgroup>
+                {champsPerso.length > 0 && (
+                  <optgroup label="Mes thèmes">
+                    {champsPerso.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.theme}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <option value={OPTION_NOUVEAU}>✏️ Nouveau thème…</option>
               </select>
             </label>
+
+            {themeId === OPTION_NOUVEAU && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  ajouterThemePerso();
+                }}
+                className="flex max-w-sm flex-col gap-2 rounded-carte border border-ligne bg-fond p-4"
+              >
+                <label
+                  htmlFor="nouveau-theme"
+                  className="text-sm font-medium text-encre-douce"
+                >
+                  Mon thème
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    id="nouveau-theme"
+                    type="text"
+                    value={nouveauTheme}
+                    onChange={(e) => setNouveauTheme(e.target.value)}
+                    placeholder="Ex. : le portrait"
+                    className="min-w-40 flex-1 rounded-full border border-ligne bg-surface px-4 py-2 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!nouveauTheme.trim()}
+                    className={btnPrincipal}
+                  >
+                    Ajouter
+                  </button>
+                </div>
+                <p className="text-xs text-encre-douce">
+                  Il sera gardé dans « Mes thèmes » pour les prochaines parties.
+                </p>
+              </form>
+            )}
+
+            {themePersoChoisi && (
+              <button
+                type="button"
+                onClick={supprimerThemePerso}
+                className={`${btnFantome} self-start`}
+              >
+                <span aria-hidden="true">🗑</span> Supprimer ce thème
+              </button>
+            )}
 
             <label className="inline-flex items-center gap-2 text-sm font-medium text-encre">
               <input
@@ -228,6 +362,7 @@ export default function ChaineLexicale() {
               <button
                 type="button"
                 onClick={lancer}
+                disabled={themeId === OPTION_NOUVEAU}
                 className={`${btnPrincipal} self-start`}
               >
                 Lancer la partie
@@ -327,6 +462,7 @@ export default function ChaineLexicale() {
         className="mt-4 flex flex-wrap gap-2"
       >
         <input
+          ref={champSaisie}
           type="text"
           value={saisie}
           onChange={(e) => setSaisie(e.target.value)}
