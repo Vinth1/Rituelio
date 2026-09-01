@@ -341,3 +341,22 @@ CREATE TABLE IF NOT EXISTS verbes_perso (
   updated_at BIGINT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_verbes_perso_unique ON verbes_perso(user_id, infinitif);
+
+-- ===== Dictées =====
+-- Texte de dictée saisi par le prof, étiqueté par des tags libres
+-- (« imparfait », « compléments-circonstanciels »…) qui servent à le retrouver.
+-- Le texte est la source de vérité de la correction collective : c'est lui
+-- qu'on découpe en mots pour valider l'épellation des élèves.
+-- Scopé user_id : un prof ne voit jamais les dictées d'un autre.
+CREATE TABLE IF NOT EXISTS dictees (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  titre TEXT NOT NULL,
+  texte TEXT NOT NULL,
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dictees_user ON dictees(user_id);
+-- GIN : sert le `tags @> ...` de la recherche par hashtags.
+CREATE INDEX IF NOT EXISTS idx_dictees_tags ON dictees USING GIN (tags);
