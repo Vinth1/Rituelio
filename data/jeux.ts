@@ -105,6 +105,23 @@ export const jeux: Jeu[] = [
     aide: "Le prof tape un mot caché (ou en pioche un au hasard) ; les élèves proposent des lettres. 6 erreurs maximum avant la défaite.",
   },
   {
+    id: "dictee-du-jour",
+    titre: "Dictée du jour",
+    categorie: "orthographe",
+    type: "jouable",
+    resume: "Correction collective, mot à mot",
+    icone: "✏️",
+    couleur: "blue",
+    duree: "20 min",
+    composant: "DicteeDuJour",
+    profSeulement: true,
+    objectifs: [
+      "Épeler et justifier l'orthographe des mots d'un texte",
+      "Repérer les accords et les pièges d'une dictée",
+    ],
+    aide: "Dépose d'abord tes textes dans l'onglet « Dictées » de l'espace prof (avec des tags : #imparfait, #adjectifs…). Ici, choisis une classe et une dictée : le texte s'affiche masqué et se révèle mot à mot. Un élève épelle, tu saisis ce que tu entends (la casse et les accents sont tolérés) ou tu tranches d'un clic ✅/❌ ; « Passer » avance sans faire épeler. Pensé pour le vidéoprojecteur.",
+  },
+  {
     id: "chaine-lexicale",
     titre: "Chaîne lexicale",
     categorie: "lexique",
