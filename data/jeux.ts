@@ -119,7 +119,7 @@ export const jeux: Jeu[] = [
       "Mobiliser et enrichir le vocabulaire d'un champ lexical",
       "Prendre la parole à tour de rôle",
     ],
-    aide: "Choisis un thème et un mode (tour simple ou élimination) ; tire un élève au sort, valide chaque mot « Correct » ou « Hors thème ». Pensé pour le vidéoprojecteur.",
+    aide: "Choisis un thème — parmi ceux proposés ou en créant le tien — et un mode (tour simple ou élimination) ; valide chaque mot « Correct » ou « Hors thème » : l'élève suivant est aussitôt tiré au sort. Pensé pour le vidéoprojecteur.",
   },
   {
     id: "conjugaison-entrainement",
