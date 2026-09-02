@@ -8,6 +8,8 @@ import {
   GROUPES,
   REGLAGES_DEFAUT,
   TEMPS_ROUE,
+  cleVerbe,
+  echantillonner,
   formeAttendue,
   libelleCourtTemps,
   normaliserReglages,
@@ -169,6 +171,22 @@ test("piocher : un seul candidat se retire quand même", () => {
     piocher([], (s) => s),
     null,
   );
+});
+
+test("échantillon : la bonne taille, le gagnant toujours dedans", () => {
+  const liste = verbesPossibles(TOUT);
+  const gagnant = liste[123];
+  for (let i = 0; i < 40; i++) {
+    const tire = echantillonner(liste, cleVerbe, 8, gagnant);
+    assert.equal(tire.length, 8);
+    assert.equal(new Set(tire.map(cleVerbe)).size, 8, "doublon sur la roue");
+    assert.ok(tire.some((v) => v.infinitif === gagnant.infinitif));
+  }
+});
+
+test("échantillon : une liste plus courte que la roue passe entière", () => {
+  const tire = echantillonner(["a", "b", "c"], (s) => s, 8);
+  assert.deepEqual([...tire].sort(), ["a", "b", "c"]);
 });
 
 test("candidats : les listes suivent les réglages", () => {

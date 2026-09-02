@@ -7,6 +7,7 @@
 // qui ne connaît pas l'alias « @/ ».
 import { conjuguer, verbes } from "../data/verbes.ts";
 import { SUJETS, type GenreSujet, type Sujet } from "../data/sujets.ts";
+import { melanger } from "./groupes.ts";
 import {
   TEMPS_COLLEGE,
   cleTempsMode,
@@ -123,6 +124,26 @@ export function piocher<T>(
       : liste.filter((t) => cle(t) !== exclu);
   const utile = restants.length > 0 ? restants : liste;
   return utile[Math.floor(Math.random() * utile.length)];
+}
+
+// `taille` candidats au hasard, en garantissant la présence de `impose` (le
+// gagnant). C'est ce qui permet d'afficher huit verbes sur une roue qui en
+// compte plus de trois cents : l'échantillon change au DÉPART de la rotation,
+// jamais à l'arrivée.
+export function echantillonner<T>(
+  liste: T[],
+  cle: (t: T) => string,
+  taille: number,
+  impose?: T,
+): T[] {
+  if (liste.length <= taille) return melanger(liste);
+  const autres = melanger(
+    impose ? liste.filter((t) => cle(t) !== cle(impose)) : liste,
+  );
+  const retenus = impose
+    ? [impose, ...autres.slice(0, taille - 1)]
+    : autres.slice(0, taille);
+  return melanger(retenus);
 }
 
 export const cleSujet = (s: Sujet): string => s.id;
