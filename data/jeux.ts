@@ -151,6 +151,23 @@ export const jeux: Jeu[] = [
     profSeulement: true,
   },
   {
+    id: "roue-des-verbes",
+    titre: "Roue des verbes",
+    categorie: "conjugaison",
+    type: "jouable",
+    resume: "Un sujet, un verbe, un temps au hasard",
+    icone: "🎡",
+    couleur: "green",
+    duree: "10 min",
+    composant: "RoueDesVerbes",
+    profSeulement: true,
+    objectifs: [
+      "Conjuguer un verbe au temps demandé, sans support écrit",
+      "Accorder le verbe avec un sujet qui n'est pas un pronom (groupe nominal, sujet coordonné)",
+    ],
+    aide: "Trois roues tirent un sujet, un verbe et un temps ; le bouton lance les trois d'un coup, et le petit « ↺ » sous chaque roue en relance une seule si le tirage ne convient pas. Fais conjuguer à l'oral ou au tableau, puis dévoile la correction avec « Voir la réponse ». Les réglages (⚙) limitent le tirage aux temps, aux types de sujets et aux groupes de verbes que tu travailles ; ils sont mémorisés sur ce poste. Pensé pour le vidéoprojecteur.",
+  },
+  {
     id: "conjugaison",
     titre: "Conjugaison",
     categorie: "conjugaison",
