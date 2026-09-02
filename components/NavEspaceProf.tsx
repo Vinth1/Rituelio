@@ -1,9 +1,10 @@
 "use client";
 
 // Bascule d'onglets de premier niveau de l'espace prof : « Activités » (le
-// catalogue, /prof), « Dictées » (la banque de textes, /prof/dictees) et
-// « Ma classe » (le pilotage de l'année, /ma-classe).
-// Rendue en haut de /prof et des pages /prof/dictees/* et /ma-classe/*.
+// catalogue, /prof), « Dictées » (la banque de textes, /prof/dictees),
+// « Outils » (les outils de classe, /prof/outils) et « Ma classe » (le pilotage
+// de l'année, /ma-classe).
+// Rendue en haut de /prof et des pages /prof/dictees/*, /prof/outils/* et /ma-classe/*.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,7 +12,8 @@ export default function NavEspaceProf() {
   const pathname = usePathname() ?? "";
   const estMaClasse = pathname.startsWith("/ma-classe");
   const estDictees = pathname.startsWith("/prof/dictees");
-  const estActivites = !estMaClasse && !estDictees;
+  const estOutils = pathname.startsWith("/prof/outils");
+  const estActivites = !estMaClasse && !estDictees && !estOutils;
 
   const onglet = (actif: boolean) =>
     `rounded-full px-4 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
@@ -39,6 +41,13 @@ export default function NavEspaceProf() {
         className={onglet(estDictees)}
       >
         Dictées
+      </Link>
+      <Link
+        href="/prof/outils"
+        aria-current={estOutils ? "page" : undefined}
+        className={onglet(estOutils)}
+      >
+        Outils
       </Link>
       <Link
         href="/ma-classe"
