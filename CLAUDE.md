@@ -47,6 +47,15 @@ mode de jeu), tableau de bord de classe (grille de cartes + carte « + »).
   - jeu `jouable` → lance le composant interactif (+ onglet « Plus d'infos / Aide »)
 - Chaque jeu a un `id` (slug). Les jeux jouables référencent leur composant via
   le champ `composant`.
+- **Onglets de premier niveau de l'espace prof** (`components/NavEspaceProf.tsx`) :
+  Activités (`/prof`), Dictées (`/prof/dictees`), **Outils** (`/prof/outils`) et
+  Ma classe (`/ma-classe`).
+- **Outils** = les aides de pilotage de séance, hors catalogue pédagogique :
+  roue des prénoms, tableau des scores par équipe, générateur de groupes,
+  chrono & minuteur. Liste dans `lib/outils.ts`, composants dans
+  `components/outils/`, une page par outil sous `app/prof/outils/<slug>/`.
+  Ce sont des outils éphémères : leur état vit en mémoire ou en localStorage
+  (`rituelio.outils.*`), jamais en base.
 
 ## Backend
 

@@ -64,3 +64,28 @@ const BANNIERE_DEFAUT = "bg-slate-600 dark:bg-slate-700";
 export function couleurBanniere(couleur: string): string {
   return BANNIERES[couleur] ?? BANNIERE_DEFAUT;
 }
+
+// Teintes de la roue des prénoms. Valeurs HEX (et non des classes Tailwind) :
+// l'attribut `fill` d'un secteur SVG ne peut pas être une classe utilitaire, et
+// Tailwind v4 interdit de toute façon de construire une classe dynamiquement.
+// 8 teintes de même luminosité (L≈42 %), lisibles sous un texte blanc cerné.
+// Palette identique en clair et en sombre : exception assumée aux tokens du
+// design system, la roue étant un objet coloré en soi.
+export const HEX_ROUE = [
+  "#ab2b2b",
+  "#ab8b2b",
+  "#6bab2b",
+  "#2bab8b",
+  "#2babab",
+  "#2b8bab",
+  "#6b2bab",
+  "#ab2b8b",
+] as const;
+
+// Teinte du secteur `i` d'une roue de `n` parts. Décale la dernière teinte quand
+// elle retomberait sur celle du premier secteur (secteurs voisins sur la roue).
+export function teinteRoue(i: number, n: number): string {
+  const total = HEX_ROUE.length;
+  if (i === n - 1 && n > 1 && i % total === 0) return HEX_ROUE[1];
+  return HEX_ROUE[i % total];
+}
