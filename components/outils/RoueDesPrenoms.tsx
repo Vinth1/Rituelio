@@ -44,6 +44,23 @@ function tailleTexte(n: number): number {
   return 3.8;
 }
 
+// Place le libellé au milieu du secteur `i`, toujours à l'endroit : sur la
+// moitié gauche de la roue, on le retourne bout pour bout, sans quoi il se
+// lirait la tête en bas.
+function libelleSecteur(i: number, n: number): { transform: string; x: number } {
+  const milieu = (i * 360) / n + 180 / n;
+  const rayon = RAYON * 0.58;
+  return milieu <= 180
+    ? {
+        transform: `rotate(${milieu - 90} ${CENTRE} ${CENTRE})`,
+        x: CENTRE + rayon,
+      }
+    : {
+        transform: `rotate(${milieu - 270} ${CENTRE} ${CENTRE})`,
+        x: CENTRE - rayon,
+      };
+}
+
 // Index tiré au hasard dans [0, longueur[. Hors du composant, comme dans les
 // autres jeux : le compilateur React refuse un appel direct à Math.random dans
 // le corps d'un composant.
@@ -242,29 +259,39 @@ export default function RoueDesPrenoms() {
                       />
                     ))
                   )}
-                  {surLaRoue.map((el, i) => (
-                    <text
-                      key={`t-${el.id}`}
-                      transform={`rotate(${(i * 360) / n + 180 / n - 90} 100 100)`}
-                      x={CENTRE + RAYON * 0.58}
-                      y={CENTRE}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={tailleTexte(n)}
-                      fontWeight="700"
-                      fill="#ffffff"
-                      stroke="#00000066"
-                      strokeWidth="0.9"
-                      style={{ paintOrder: "stroke" }}
-                    >
-                      {abreger(el.nom)}
-                    </text>
-                  ))}
+                  {surLaRoue.map((el, i) => {
+                    const place = libelleSecteur(i, n);
+                    return (
+                      <text
+                        key={`t-${el.id}`}
+                        transform={place.transform}
+                        x={place.x}
+                        y={CENTRE}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={tailleTexte(n)}
+                        fontWeight="700"
+                        fill="#ffffff"
+                        stroke="#00000066"
+                        strokeWidth="0.9"
+                        style={{ paintOrder: "stroke" }}
+                      >
+                        {abreger(el.nom)}
+                      </text>
+                    );
+                  })}
                 </g>
                 {/* Moyeu fixe */}
                 <circle cx={CENTRE} cy={CENTRE} r="14" fill="#ffffff" stroke="#00000022" />
-                {/* Repère : c’est le prénom sous cette pointe qui gagne */}
-                <path d="M 100 20 L 92 4 L 108 4 Z" fill="#26314f" />
+                {/* Repère : c’est le prénom sous cette pointe qui gagne. Cerné
+                    de blanc pour rester lisible sur toutes les teintes. */}
+                <path
+                  d="M 100 20 L 92 4 L 108 4 Z"
+                  fill="#26314f"
+                  stroke="#ffffff"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
               </svg>
             )}
           </div>
