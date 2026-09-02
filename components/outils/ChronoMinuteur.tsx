@@ -224,7 +224,9 @@ export default function ChronoMinuteur() {
 
       {/* Affichage */}
       <div className="mt-6 flex flex-col items-center gap-6">
-        <div className="relative flex w-full max-w-sm items-center justify-center">
+        {/* Assez grand pour la projection, assez court pour que les boutons
+            restent visibles sans faire défiler la page. */}
+        <div className="relative flex w-full max-w-[18rem] items-center justify-center">
           {mode === "minuteur" && (
             <svg viewBox="0 0 100 100" className="w-full -rotate-90" aria-hidden="true">
               <circle

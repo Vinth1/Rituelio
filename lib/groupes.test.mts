@@ -21,18 +21,42 @@ test("constituerGroupes : personne n'est perdu ni dupliqué", () => {
   }
 });
 
-test("constituerGroupes : aucun groupe ne dépasse la taille demandée", () => {
+test("constituerGroupes : un groupe ne dépasse jamais la taille demandée de plus de 1", () => {
+  // Le dépassement n'arrive que pour absorber un reste (15 par 2 → un trio).
   for (const effectif of [1, 5, 13, 24, 31]) {
     const eleves = Array.from({ length: effectif }, (_, i) => i);
     for (const taille of [2, 3, 4, 5, 6]) {
       for (const groupe of constituerGroupes(eleves, taille)) {
         assert.ok(
-          groupe.length <= taille,
+          groupe.length <= taille + 1,
           `${effectif} élèves par ${taille} : groupe de ${groupe.length}`,
         );
       }
     }
   }
+});
+
+test("constituerGroupes : personne ne reste seul dès qu'on est au moins deux", () => {
+  for (let effectif = 2; effectif <= 35; effectif++) {
+    const eleves = Array.from({ length: effectif }, (_, i) => i);
+    for (const taille of [2, 3, 4, 5, 6]) {
+      const tailles = constituerGroupes(eleves, taille).map((g) => g.length);
+      assert.ok(
+        Math.min(...tailles) >= 2,
+        `${effectif} élèves par ${taille} : ${tailles.join("/")}`,
+      );
+    }
+  }
+});
+
+test("constituerGroupes : 15 élèves en binômes font 7 groupes, dont un trio", () => {
+  const tailles = constituerGroupes(
+    Array.from({ length: 15 }, (_, i) => i),
+    2,
+  )
+    .map((g) => g.length)
+    .sort();
+  assert.deepEqual(tailles, [2, 2, 2, 2, 2, 2, 3]);
 });
 
 test("constituerGroupes : les tailles ne diffèrent jamais de plus de 1", () => {
