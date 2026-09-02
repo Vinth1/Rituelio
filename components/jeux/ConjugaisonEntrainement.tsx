@@ -3,10 +3,10 @@
 // Jeu jouable « Conjugaison — entraînement » (au tableau, mode projection).
 // Le prof choisit 2 verbes (verbe + temps + mode), une classe, une date et les
 // contraintes de phrase, puis projette 2 tableaux où la classe complète pronom +
-// forme des 6 personnes, avec vérification ligne par ligne. Une roue désigne un
-// élève au hasard (avec une petite animation). La section « Ma phrase » fait
-// produire une phrase utilisant les 2 verbes sous contraintes. La séance terminée
-// est enregistrée dans un historique par classe (localStorage).
+// forme des 6 personnes, avec vérification ligne par ligne. La section
+// « Ma phrase » fait produire une phrase utilisant les 2 verbes sous contraintes.
+// La séance terminée est enregistrée dans un historique par classe (localStorage).
+// Pour désigner un élève au hasard : l'outil « Roue des prénoms » (/prof/outils/roue).
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -25,14 +25,11 @@ import {
   seancesDeClasse,
 } from "@/lib/historique-conjugaison";
 import { ligneCorrecte } from "@/lib/conjugaison";
-import { couleurBande } from "@/lib/couleurs";
 import SelecteurVerbe from "@/components/conjugaison/SelecteurVerbe";
 import FormVerbePerso, {
   type VerbePerso,
 } from "@/components/conjugaison/FormVerbePerso";
 import SuiviEvaluation from "@/components/evaluation/SuiviEvaluation";
-
-const ACCENT = "green"; // accent de couleur du rituel « conjugaison »
 
 type Phase = "menu" | "jeu" | "historique" | "suiviEval" | "nouveauVerbe";
 type ModeJeu = "entrainement" | "evaluation";
@@ -164,9 +161,6 @@ export default function ConjugaisonEntrainement() {
   // Partie en cours
   const [parties, setParties] = useState<Partie[]>([]);
   const [saisies, setSaisies] = useState<Ligne[][]>([]);
-  const [eleveRoue, setEleveRoue] = useState<string | null>(null);
-  const [roulette, setRoulette] = useState(false);
-  const rouleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Minuteries pour vider une ligne fausse après le flash rouge (clé « t-i »).
   const effaceursRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
@@ -203,11 +197,10 @@ export default function ConjugaisonEntrainement() {
     };
   }, []);
 
-  // Arrête l'animation de la roue et les minuteries d'effacement au démontage.
+  // Arrête les minuteries d'effacement au démontage.
   useEffect(() => {
     const effaceurs = effaceursRef.current;
     return () => {
-      if (rouleRef.current) clearInterval(rouleRef.current);
       effaceurs.forEach((minuterie) => clearTimeout(minuterie));
       effaceurs.clear();
     };
@@ -232,8 +225,6 @@ export default function ConjugaisonEntrainement() {
     () => new Set(verbesPerso.map((v) => v.infinitif)),
     [verbesPerso],
   );
-
-  const eleves = classes.find((c) => c.id === classeId)?.eleves ?? [];
 
   // Supprime un verbe du prof. Les tableaux qui le visaient retombent sur
   // « parler », faute de quoi « Lancer » resterait bloqué sans rien dire.
@@ -276,7 +267,6 @@ export default function ConjugaisonEntrainement() {
     if (resolues.some((p) => p === null)) return;
     setParties(resolues as Partie[]);
     setSaisies([lignesVides(), lignesVides()]);
-    setEleveRoue(null);
     setPhrase("");
     setPhraseCorrigee("");
     setContraintes(contraintesChoisies.map((label) => ({ label, validee: false })));
@@ -374,22 +364,6 @@ export default function ConjugaisonEntrainement() {
     }
   }
 
-  // Tire un élève au hasard avec une petite animation (les prénoms défilent).
-  function lancerRoue() {
-    if (eleves.length === 0 || roulette) return;
-    setRoulette(true);
-    let ticks = 0;
-    rouleRef.current = setInterval(() => {
-      setEleveRoue(eleves[Math.floor(Math.random() * eleves.length)].nom);
-      ticks += 1;
-      if (ticks >= 15) {
-        if (rouleRef.current) clearInterval(rouleRef.current);
-        rouleRef.current = null;
-        setRoulette(false);
-      }
-    }, 80);
-  }
-
   function basculerContrainte(idx: number) {
     setContraintes((prev) =>
       prev.map((c, i) => (i === idx ? { ...c, validee: !c.validee } : c)),
@@ -398,7 +372,6 @@ export default function ConjugaisonEntrainement() {
 
   function reinitialiser() {
     setSaisies([lignesVides(), lignesVides()]);
-    setEleveRoue(null);
     setPhrase("");
     setPhraseCorrigee("");
     setContraintes((prev) => prev.map((c) => ({ ...c, validee: false })));
@@ -503,8 +476,7 @@ export default function ConjugaisonEntrainement() {
               <li>
                 <strong>Entraînement</strong> : au tableau, la classe complète les
                 6 personnes (pronom + forme) de chaque verbe ; chaque ligne se
-                vérifie d’un clic (✓ vert, sinon flash rouge). La{" "}
-                <strong>roue</strong> 🎡 désigne un élève au hasard.{" "}
+                vérifie d’un clic (✓ vert, sinon flash rouge).{" "}
                 <strong>« Ma phrase »</strong> fait écrire une phrase qui utilise
                 les 2 verbes. « Terminer la séance » l’enregistre dans
                 l’<strong>historique</strong>.
@@ -790,25 +762,6 @@ export default function ConjugaisonEntrainement() {
           Conjugaison — entraînement
         </h2>
         <span className="text-sm text-encre-douce">{date}</span>
-      </div>
-
-      {/* Roue */}
-      <div
-        className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-carte px-5 py-4 ${couleurBande(ACCENT)}`}
-      >
-        <p
-          className={`text-4xl font-extrabold transition ${roulette ? "animate-pulse" : ""}`}
-        >
-          {eleveRoue ?? "—"}
-        </p>
-        <button
-          type="button"
-          onClick={lancerRoue}
-          disabled={eleves.length === 0 || roulette}
-          className={btnPrincipal}
-        >
-          <span aria-hidden="true">🎡</span> {roulette ? "…" : "Lancer la roue"}
-        </button>
       </div>
 
       {/* 2 tableaux */}
