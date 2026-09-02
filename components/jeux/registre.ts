@@ -7,6 +7,7 @@ import ConjugaisonEleve from "./ConjugaisonEleve";
 import ConjugaisonEntrainement from "./ConjugaisonEntrainement";
 import DefiLecture from "./DefiLecture";
 import DicteeDuJour from "./DicteeDuJour";
+import ImageMystere from "./ImageMystere";
 import MotDuJour from "./MotDuJour";
 import Pendu from "./Pendu";
 import QuizCulture from "./QuizCulture";
@@ -17,6 +18,7 @@ export const JEUX_JOUABLES: Record<string, ComponentType> = {
   ConjugaisonEntrainement,
   DefiLecture,
   DicteeDuJour,
+  ImageMystere,
   MotDuJour,
   Pendu,
   QuizCulture,

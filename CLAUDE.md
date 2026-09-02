@@ -79,7 +79,12 @@ dynamiques et sensibles. Client SQL : le paquet `postgres` (postgres.js), requê
   par propriétaire.
 - **Variables d'environnement** (`.env.local`, cf. `.env.example`) : `DATABASE_URL`
   (obligatoire), `PROF_MOT_DE_PASSE` (amorçage du compte au 1er login),
-  `CLE_INSCRIPTION` (optionnel, ouvre `/inscription`).
+  `CLE_INSCRIPTION` (optionnel, ouvre `/inscription`), `BLOB_READ_WRITE_TOKEN`
+  (Vercel Blob, obligatoire en prod pour la banque d'images).
+- **Fichiers téléversés** : la base ne stocke que des métadonnées. Le binaire va
+  sur **Vercel Blob** (`lib/serveur/stockage-images.ts`), avec un repli
+  `.data/images/` en développement. Une URL Blob `public` est imprévisible mais
+  **publique** : jamais de photo d'élève.
 - **Classes/élèves** : source de vérité = backend (`/api/classes`). Un **miroir
   localStorage** est maintenu pour les jeux pas encore migrés (à migrer vers l'API).
 - **« Ma classe »** : les tables existent (`creneaux`, `matieres`, `taches`,

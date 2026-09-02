@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { decouperEnMots, type Dictee } from "@/lib/dictee";
-import ChampTags, { useTagsConnus } from "./ChampTags";
+import ChampTags, { useTagsConnus } from "@/components/ChampTags";
 
 function formaterDate(ms: number): string {
   return new Date(ms).toLocaleDateString("fr-FR", {

@@ -28,6 +28,9 @@ en classe. Une page d'accueil sépare deux usages :
 - **Gestion des classes** (`/classe`) : classes et élèves, enregistrés sur le
   **backend** (source de vérité ; un miroir `localStorage` sert les jeux pas
   encore migrés).
+- **Banque d'images** (jeu « Image mystère ») : le prof dépose ses propres
+  images, rangées par **thèmes** libres, enregistrées sur son compte. Voir
+  *Stockage des images* ci-dessous.
 - **Thème clair / sombre** et identité visuelle (police Nunito, couleur turquoise, logo).
 
 ## Stack technique
@@ -87,6 +90,30 @@ jeux ouverts) reste librement accessible.
 > La base est un **Postgres** défini par `DATABASE_URL`. En production, viser un
 > Postgres managé (**Neon** / **Vercel Postgres**) et appliquer le schéma une fois
 > avec `npm run db:migrate`. (Un fichier SQLite local ne persisterait pas sur Vercel.)
+
+## Stockage des images
+
+Le jeu **« Image mystère »** laisse le prof téléverser ses propres images. La base
+ne garde que les métadonnées (titre, thèmes, dimensions, URL) ; le fichier va
+ailleurs :
+
+- **Production** — [Vercel Blob](https://vercel.com/docs/storage/vercel-blob).
+  Créer un store *Blob* sur le projet Vercel, puis renseigner
+  `BLOB_READ_WRITE_TOKEN`. C'est le seul stockage qui persiste : le disque d'une
+  fonction serverless est éphémère.
+- **Développement** — sans cette variable, les images sont écrites dans
+  `.data/images/` (gitignoré) et servies par `/api/images/<id>/fichier`, route
+  elle aussi réservée au prof connecté. Aucun compte Vercel n'est donc nécessaire
+  pour développer.
+
+Avant l'envoi, le navigateur réduit chaque image à **1600 px** sur son plus grand
+côté et la réencode en JPEG (le GIF est laissé intact) : une photo de téléphone
+passe ainsi sous la limite de 4 Mo du corps d'une requête.
+
+> ⚠️ Une URL Vercel Blob `public` est **imprévisible mais publique** : elle n'est
+> pas protégée par le cookie prof. Convient à des paysages ou des objets, **pas à
+> un visage d'élève**. L'API de gestion (liste, dépôt, suppression), elle, reste
+> fermée au prof authentifié.
 
 ## Structure du projet
 
