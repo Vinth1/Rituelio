@@ -8,7 +8,7 @@
 //
 // Le composant est purement présentationnel : il reçoit les tags connus et ne
 // sait pas d'où ils viennent. Il sert aussi bien à étiqueter une dictée qu'à
-// filtrer la liste des dictées.
+// filtrer une liste, ou à ranger les images de la banque par thèmes.
 import { useEffect, useId, useRef, useState } from "react";
 import { MAX_TAGS, normaliserTag, replierTag } from "@/lib/dictee";
 
@@ -16,8 +16,9 @@ export type TagConnu = { tag: string; n: number };
 
 // Récupère les tags déjà utilisés par le prof. Exporté ici parce que la liste
 // et l'éditeur en ont tous les deux besoin ; `recharger` sert après un
-// enregistrement, qui a pu créer un tag.
-export function useTagsConnus(): {
+// enregistrement, qui a pu créer un tag. `url` dit à quelle banque s'adresser
+// (dictées par défaut, images pour « Image mystère »).
+export function useTagsConnus(url = "/api/dictees/tags"): {
   tags: TagConnu[];
   recharger: () => void;
 } {
@@ -28,7 +29,7 @@ export function useTagsConnus(): {
     let actif = true;
     (async () => {
       try {
-        const r = await fetch("/api/dictees/tags");
+        const r = await fetch(url);
         if (r.ok && actif) {
           const data = (await r.json()) as { tags: TagConnu[] };
           setTags(data.tags);
@@ -40,10 +41,13 @@ export function useTagsConnus(): {
     return () => {
       actif = false;
     };
-  }, [tour]);
+  }, [tour, url]);
 
   return { tags, recharger: () => setTour((t) => t + 1) };
 }
+
+// Compteur affiché à droite d'une proposition : « 3 dictées », « 3 images ».
+const COMPTE_DICTEES = (n: number) => `${n} dictée${n > 1 ? "s" : ""}`;
 
 export default function ChampTags({
   tags,
@@ -51,12 +55,14 @@ export default function ChampTags({
   tagsConnus,
   label,
   placeholder = "Ajouter un tag…",
+  libelleCompte = COMPTE_DICTEES,
 }: {
   tags: string[];
   onChange: (tags: string[]) => void;
   tagsConnus: TagConnu[];
   label: string;
   placeholder?: string;
+  libelleCompte?: (n: number) => string;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [saisie, setSaisie] = useState("");
@@ -239,7 +245,7 @@ export default function ChampTags({
               >
                 <span className="truncate">#{t.tag}</span>
                 <span className="ml-auto shrink-0 text-xs text-encre-douce">
-                  {t.n} dictée{t.n > 1 ? "s" : ""}
+                  {libelleCompte(t.n)}
                 </span>
               </li>
             ))}

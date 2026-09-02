@@ -20,7 +20,7 @@ import {
 } from "@/lib/dictee";
 import { type Classe, type Eleve, chargerClasses } from "@/lib/classes";
 import { couleurBande } from "@/lib/couleurs";
-import ChampTags, { useTagsConnus } from "@/components/dictees/ChampTags";
+import ChampTags, { useTagsConnus } from "@/components/ChampTags";
 
 const ACCENT = "blue"; // accent de couleur du rituel « orthographe »
 

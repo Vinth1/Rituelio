@@ -360,3 +360,28 @@ CREATE TABLE IF NOT EXISTS dictees (
 CREATE INDEX IF NOT EXISTS idx_dictees_user ON dictees(user_id);
 -- GIN : sert le `tags @> ...` de la recherche par hashtags.
 CREATE INDEX IF NOT EXISTS idx_dictees_tags ON dictees USING GIN (tags);
+
+-- ===== Banque d'images du prof =====
+-- Images téléversées par le prof pour le jeu « Image mystère » (description,
+-- expression orale et écrite), étiquetées par des thèmes libres, sur le modèle
+-- des tags de dictée.
+-- Le FICHIER, lui, ne vit pas ici : `url` pointe vers Vercel Blob en production
+-- (ou vers /api/images/<id>/fichier en repli de développement) et `cle` garde de
+-- quoi le supprimer. Voir lib/serveur/stockage-images.ts.
+-- Scopé user_id : un prof ne voit jamais les images d'un autre.
+CREATE TABLE IF NOT EXISTS images_prof (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
+  titre TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL,
+  cle TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  taille_octets BIGINT NOT NULL,
+  largeur INTEGER NOT NULL,
+  hauteur INTEGER NOT NULL,
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_images_prof_user ON images_prof(user_id);
+-- GIN : sert le `tags @> ...` du filtre par thème.
+CREATE INDEX IF NOT EXISTS idx_images_prof_tags ON images_prof USING GIN (tags);
