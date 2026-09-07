@@ -6,6 +6,8 @@
 // forme des 6 personnes, avec vérification ligne par ligne. La section
 // « Ma phrase » fait produire une phrase utilisant les 2 verbes sous contraintes.
 // La séance terminée est enregistrée dans un historique par classe (localStorage).
+// Les évaluations, elles, vivent côté serveur : l'écran « Mes évaluations » les
+// retrouve (code, statut, copies reçues) même après avoir quitté la page.
 // Pour désigner un élève au hasard : l'outil « Roue des prénoms » (/prof/outils/roue).
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -30,8 +32,15 @@ import FormVerbePerso, {
   type VerbePerso,
 } from "@/components/conjugaison/FormVerbePerso";
 import SuiviEvaluation from "@/components/evaluation/SuiviEvaluation";
+import type { ResumeEvaluation } from "@/lib/evaluation-types";
 
-type Phase = "menu" | "jeu" | "historique" | "suiviEval" | "nouveauVerbe";
+type Phase =
+  | "menu"
+  | "jeu"
+  | "historique"
+  | "listeEvals"
+  | "suiviEval"
+  | "nouveauVerbe";
 type ModeJeu = "entrainement" | "evaluation";
 type Ligne = { pronom: string; forme: string; valide: boolean | null };
 type Partie = { entree: EntreeVerbe; conj: Conjugaison };
@@ -152,6 +161,13 @@ export default function ConjugaisonEntrainement() {
   const [modeJeu, setModeJeu] = useState<ModeJeu>("entrainement");
   const [codeEval, setCodeEval] = useState<string | null>(null);
   const [creationEnCours, setCreationEnCours] = useState(false);
+  // Évaluations déjà créées pour la classe choisie. `null` = pas encore chargé.
+  const [evals, setEvals] = useState<ResumeEvaluation[] | null>(null);
+  // Une liste vide et une liste qu'on n'a pas pu charger ne se disent pas
+  // pareil : sur cet écran, « aucune évaluation » à tort serait trompeur.
+  const [evalsEnErreur, setEvalsEnErreur] = useState(false);
+  // Écran à réafficher quand on quitte le suivi d'une évaluation.
+  const [retourSuivi, setRetourSuivi] = useState<Phase>("menu");
   const [aideOuverte, setAideOuverte] = useState(false);
   const [verbesPerso, setVerbesPerso] = useState<VerbePerso[]>([]);
   const [infinitifPropose, setInfinitifPropose] = useState("");
@@ -181,6 +197,30 @@ export default function ConjugaisonEntrainement() {
     setCharge(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Évaluations de la classe choisie. Elles vivent côté serveur : c'est ce qui
+  // permet de retrouver le code d'une évaluation après avoir quitté la page.
+  // Rechargées à chaque ouverture de l'écran et à chaque changement de classe.
+  useEffect(() => {
+    if (phase !== "listeEvals" || !classeId) return;
+    let vivant = true;
+    fetch(`/api/evaluations?classeId=${encodeURIComponent(classeId)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((d: { evaluations?: ResumeEvaluation[] }) => {
+        if (vivant) setEvals(d.evaluations ?? []);
+      })
+      .catch(() => {
+        if (!vivant) return;
+        setEvals([]);
+        setEvalsEnErreur(true);
+      });
+    return () => {
+      vivant = false;
+    };
+  }, [phase, classeId]);
 
   // Verbes personnalisés du prof (API). Un échec n'est pas bloquant : on
   // travaille alors avec la seule banque officielle.
@@ -310,6 +350,7 @@ export default function ConjugaisonEntrainement() {
       if (r.ok) {
         const { code } = (await r.json()) as { code: string };
         setCodeEval(code);
+        setRetourSuivi("menu");
         setPhase("suiviEval");
       }
     } catch {
@@ -431,7 +472,7 @@ export default function ConjugaisonEntrainement() {
   // ---------- Écran : suivi d'une évaluation ----------
   if (phase === "suiviEval" && codeEval) {
     return (
-      <SuiviEvaluation code={codeEval} onRetour={() => setPhase("menu")} />
+      <SuiviEvaluation code={codeEval} onRetour={() => setPhase(retourSuivi)} />
     );
   }
 
@@ -453,6 +494,17 @@ export default function ConjugaisonEntrainement() {
               className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-encre-douce ring-1 ring-ligne transition hover:bg-fond hover:text-principal focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
             >
               ?
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEvals(null);
+                setEvalsEnErreur(false);
+                setPhase("listeEvals");
+              }}
+              className={btnFantome}
+            >
+              <span aria-hidden="true">🗂️</span> Mes évaluations
             </button>
             <button
               type="button"
@@ -487,6 +539,11 @@ export default function ConjugaisonEntrainement() {
                 <strong>« Rejoindre une évaluation »</strong>, entrent le code et
                 leur prénom, remplissent les tableaux et la phrase, puis envoient
                 leur copie. Tu suis les copies en direct et tu corriges (note /20).
+              </li>
+              <li>
+                Tu as quitté la page ? <strong>« Mes évaluations »</strong>{" "}
+                retrouve toutes les évaluations de la classe avec leur code, et
+                rouvre le suivi là où tu l’avais laissé.
               </li>
             </ul>
           </div>
@@ -676,6 +733,120 @@ export default function ConjugaisonEntrainement() {
                 {creationEnCours ? "Création…" : "Créer l'évaluation"}
               </button>
             )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ---------- Écran : mes évaluations ----------
+  // Une évaluation créée reste ouverte côté serveur : cet écran la retrouve
+  // (avec son code) même après avoir quitté le jeu ou rechargé la page.
+  if (phase === "listeEvals") {
+    return (
+      <div className="rounded-carte border border-ligne bg-surface p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-titre text-2xl font-bold text-encre">
+            Mes évaluations
+          </h2>
+          <button
+            type="button"
+            onClick={() => setPhase("menu")}
+            className={btnFantome}
+          >
+            <span aria-hidden="true">←</span> Retour
+          </button>
+        </div>
+
+        <p className="mt-2 text-sm text-encre-douce">
+          Les évaluations créées pour cette classe, avec leur code. « Ouvrir le
+          suivi » affiche les copies reçues et permet de corriger.
+        </p>
+
+        {classes.length > 0 && (
+          <label className="mt-4 flex items-center gap-2 text-sm font-medium text-encre-douce">
+            Classe
+            <select
+              value={classeId ?? ""}
+              onChange={(e) => {
+                setEvals(null);
+                setEvalsEnErreur(false);
+                setClasseId(e.target.value);
+              }}
+              className={champ}
+            >
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom || "Sans nom"}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {evals === null ? (
+          <p className="mt-6 text-sm text-encre-douce">Chargement…</p>
+        ) : evalsEnErreur ? (
+          <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
+            Impossible de charger les évaluations. Vérifie que tu es bien
+            connecté(e), puis reviens sur cet écran.
+          </p>
+        ) : evals.length === 0 ? (
+          <p className="mt-6 rounded-carte border border-dashed border-ligne p-6 text-center text-sm text-encre-douce">
+            Aucune évaluation pour cette classe. Choisis le mode
+            « Évaluation » dans le menu pour en créer une.
+          </p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3">
+            {evals.map((ev) => (
+              <div
+                key={ev.code}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-carte border border-ligne p-4"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-encre">{ev.name}</span>
+                    <span
+                      className={`rounded-full px-3 py-0.5 text-xs font-semibold ${
+                        ev.status === "ouverte"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200"
+                          : "bg-fond text-encre-douce"
+                      }`}
+                    >
+                      {ev.status === "ouverte" ? "Ouverte" : "Terminée"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-encre-douce">
+                    {ev.verbes
+                      .map((v) => `${v.infinitif} (${v.temps})`)
+                      .join("  ·  ")}
+                  </p>
+                  <p className="mt-1 text-sm text-encre-douce">
+                    {/* Le nom par défaut est « Évaluation du <date> » : inutile
+                        de répéter la date quand elle y est déjà. */}
+                    {ev.name.includes(ev.date) ? "" : `${ev.date} · `}
+                    {ev.nbCopies} copie{ev.nbCopies > 1 ? "s" : ""} reçue
+                    {ev.nbCopies > 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="rounded-moyen bg-principal-clair px-3 py-1.5 text-2xl font-extrabold tracking-wider text-principal">
+                    {ev.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCodeEval(ev.code);
+                      setRetourSuivi("listeEvals");
+                      setPhase("suiviEval");
+                    }}
+                    className={btnPrincipal}
+                  >
+                    Ouvrir le suivi
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
