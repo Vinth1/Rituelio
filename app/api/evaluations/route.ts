@@ -9,7 +9,7 @@ import {
   type VerbeRef,
 } from "@/lib/serveur/evaluations";
 import type { FormesFigees } from "@/lib/evaluation-types";
-import { refuserSiNonProf, sessionProf } from "@/lib/serveur/session-prof";
+import { sessionProf } from "@/lib/serveur/session-prof";
 
 type CorpsCreation = {
   name?: string;
@@ -79,11 +79,17 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const refus = await refuserSiNonProf();
-  if (refus) return refus;
+  const session = await sessionProf();
+  if (!session) {
+    return Response.json({ erreur: "Non autorisé" }, { status: 401 });
+  }
   const classeId = new URL(request.url).searchParams.get("classeId");
   if (!classeId) {
     return Response.json({ erreur: "classeId requis" }, { status: 400 });
   }
-  return Response.json({ evaluations: await evaluationsDeClasse(classeId) });
+  // Filtré par propriétaire : un prof ne voit que ses propres évaluations,
+  // même s'il devine l'identifiant d'une classe qui n'est pas la sienne.
+  return Response.json({
+    evaluations: await evaluationsDeClasse(classeId, session.userId),
+  });
 }

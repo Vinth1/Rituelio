@@ -51,8 +51,12 @@ export default async function PageJeu({
     jeu.type !== "jouable" &&
     ((jeu.objectifs?.length ?? 0) > 0 || Boolean(jeu.aide));
 
+  // Les jeux jouables affichent des grilles de cartes : ils ont besoin de la
+  // largeur de l'espace prof. Les fiches gardent une largeur de lecture.
+  const largeur = JeuJouable ? "max-w-6xl" : "max-w-3xl";
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className={`mx-auto ${largeur} px-4 py-6`}>
       <Link
         href={retourHref}
         className="inline-flex items-center gap-1 text-sm text-encre-douce transition hover:text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"

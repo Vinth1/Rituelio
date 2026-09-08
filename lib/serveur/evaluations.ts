@@ -319,10 +319,12 @@ export async function terminer(code: string): Promise<void> {
 // --- Historique par classe ---
 export async function evaluationsDeClasse(
   classeId: string,
+  userId: string,
 ): Promise<ResumeEvaluation[]> {
   const sessions = (await sql()`
     SELECT id, code, name, date, status, class_id, class_name FROM sessions
-    WHERE class_id = ${classeId} ORDER BY created_at DESC
+    WHERE class_id = ${classeId} AND user_id = ${userId}
+    ORDER BY created_at DESC
   `) as unknown as {
     id: string;
     code: string;
