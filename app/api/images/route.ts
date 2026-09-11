@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 import { creerImage, imagesDeProf, lireMetaEntrantes } from "@/lib/serveur/images";
 import { sessionProf } from "@/lib/serveur/session-prof";
-import { deposer } from "@/lib/serveur/stockage-images";
+import { deposer, supprimer, surVercelBlob } from "@/lib/serveur/stockage-images";
 import { MAX_OCTETS, tailleLisible } from "@/lib/images";
 
 export async function GET(request: Request) {
@@ -48,19 +48,37 @@ export async function POST(request: Request) {
   let depot;
   try {
     depot = await deposer(id, await fichier.arrayBuffer(), fichier.type);
-  } catch {
+  } catch (e) {
+    // Sans trace, la cause reste invisible dans les logs Vercel et le prof n'a
+    // qu'un message générique : on journalise, et on dit où regarder.
+    console.error("[images] dépôt du fichier impossible", e);
     return Response.json(
-      { erreur: "Le stockage des images n'est pas disponible" },
+      {
+        erreur: surVercelBlob()
+          ? "Le dépôt sur Vercel Blob a échoué (jeton ou store Blob à vérifier)"
+          : "Le stockage des images n'est pas disponible",
+      },
       { status: 503 },
     );
   }
 
-  const image = await creerImage(session.userId, {
-    id,
-    ...lu.data,
-    ...depot,
-    mime: fichier.type,
-    tailleOctets: fichier.size,
-  });
-  return Response.json({ image }, { status: 201 });
+  try {
+    const image = await creerImage(session.userId, {
+      id,
+      ...lu.data,
+      ...depot,
+      mime: fichier.type,
+      tailleOctets: fichier.size,
+    });
+    return Response.json({ image }, { status: 201 });
+  } catch (e) {
+    // La ligne n'existe pas : le fichier déposé n'a plus de propriétaire et
+    // resterait orphelin dans le stockage. On le retire avant de rendre la main.
+    console.error("[images] enregistrement en base impossible", e);
+    await supprimer(depot);
+    return Response.json(
+      { erreur: "L'image n'a pas pu être enregistrée" },
+      { status: 500 },
+    );
+  }
 }
