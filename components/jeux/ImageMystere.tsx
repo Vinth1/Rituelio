@@ -19,6 +19,7 @@ import { couleurBande } from "@/lib/couleurs";
 import {
   MAX_COTE,
   MAX_OCTETS,
+  MAX_TITRE,
   estMimeImage,
   tailleLisible,
   type ImageProf,
@@ -97,7 +98,12 @@ export default function ImageMystere() {
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [survol, setSurvol] = useState(false);
   const [aSupprimer, setASupprimer] = useState<string | null>(null);
+  // Deux fils d'erreur, affichés chacun près de l'action qui les déclenche : le
+  // tirage en haut, sous le titre ; la banque dans son panneau, sous la zone de
+  // dépôt. Un message unique en haut de carte tombait hors de l'écran pendant un
+  // téléversement — l'envoi échouait alors sans que rien ne le dise.
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreurBanque, setErreurBanque] = useState<string | null>(null);
   const champFichier = useRef<HTMLInputElement>(null);
 
   const { tags: themesConnus, recharger: rechargerThemes } =
@@ -187,18 +193,32 @@ export default function ImageMystere() {
 
   async function envoyer(fichiers: File[]) {
     const acceptes = fichiers.filter((f) => estMimeImage(f.type));
+    const refuses = fichiers.length - acceptes.length;
     if (acceptes.length === 0) {
-      setErreur("Formats acceptés : JPEG, PNG, WebP, GIF.");
+      setErreurBanque(
+        fichiers.length === 0
+          ? "Aucun fichier reçu."
+          : "Formats acceptés : JPEG, PNG, WebP, GIF (les photos HEIC d’iPhone ne passent pas).",
+      );
       return;
     }
-    setErreur(null);
+    setErreurBanque(null);
     setEnvoiEnCours(true);
-    try {
-      for (const f of acceptes) {
+
+    // Un fichier qui échoue ne doit pas emporter les suivants : chacun est
+    // traité à part et les motifs d'échec sont rassemblés pour l'affichage.
+    const echecs: string[] = [];
+    if (refuses > 0) {
+      const s = refuses > 1 ? "s" : "";
+      echecs.push(`${refuses} fichier${s} ignoré${s} (format non accepté)`);
+    }
+
+    for (const f of acceptes) {
+      try {
         const prepare = await reduire(f);
         if (prepare.fichier.size > MAX_OCTETS) {
-          setErreur(
-            `« ${f.name} » reste trop lourde (max ${tailleLisible(MAX_OCTETS)}).`,
+          echecs.push(
+            `« ${f.name} » reste trop lourde (max ${tailleLisible(MAX_OCTETS)})`,
           );
           continue;
         }
@@ -206,7 +226,7 @@ export default function ImageMystere() {
         form.set("fichier", prepare.fichier);
         form.set("largeur", String(prepare.largeur));
         form.set("hauteur", String(prepare.hauteur));
-        form.set("titre", nomSansExtension(f.name).slice(0, 120));
+        form.set("titre", nomSansExtension(f.name).slice(0, MAX_TITRE));
         // Déposer depuis un thème filtré range l'image dedans d'emblée.
         form.set("tags", theme);
         const r = await fetch("/api/images", { method: "POST", body: form });
@@ -214,18 +234,19 @@ export default function ImageMystere() {
           const data = (await r.json().catch(() => null)) as {
             erreur?: string;
           } | null;
-          setErreur(data?.erreur ?? `Envoi de « ${f.name} » impossible.`);
+          echecs.push(`« ${f.name} » : ${data?.erreur ?? `erreur ${r.status}`}`);
           continue;
         }
         const { image } = (await r.json()) as { image: ImageProf };
         setImages((prev) => [image, ...prev]);
+      } catch {
+        echecs.push(`« ${f.name} » n’a pas pu être préparée ni envoyée`);
       }
-      rechargerThemes();
-    } catch {
-      setErreur("Le téléversement a échoué.");
-    } finally {
-      setEnvoiEnCours(false);
     }
+
+    setEnvoiEnCours(false);
+    setErreurBanque(echecs.length > 0 ? echecs.join(" · ") : null);
+    rechargerThemes();
   }
 
   async function majImage(id: string, champs: { titre: string; tags: string[] }) {
@@ -239,10 +260,11 @@ export default function ImageMystere() {
       body: JSON.stringify(champs),
     });
     if (!r.ok) {
-      setErreur("L'enregistrement a échoué.");
+      setErreurBanque("L'enregistrement a échoué.");
       void rechargerImages();
       return;
     }
+    setErreurBanque(null);
     rechargerThemes();
   }
 
@@ -250,7 +272,7 @@ export default function ImageMystere() {
     setASupprimer(null);
     const r = await fetch(`/api/images/${id}`, { method: "DELETE" });
     if (!r.ok) {
-      setErreur("La suppression a échoué.");
+      setErreurBanque("La suppression a échoué.");
       return;
     }
     setImages((prev) => prev.filter((i) => i.id !== id));
@@ -432,6 +454,15 @@ export default function ImageMystere() {
                 JPEG, PNG, WebP, GIF — réduites à {MAX_COTE} px avant l’envoi.
               </p>
             </div>
+
+            {erreurBanque && (
+              <p
+                role="alert"
+                className="mt-3 rounded-carte bg-rose-100 px-4 py-3 text-sm text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/15 dark:text-rose-200 dark:ring-rose-700"
+              >
+                {erreurBanque}
+              </p>
+            )}
 
             {/* Les images déposées */}
             <ul className="mt-4 grid gap-4 sm:grid-cols-2">
