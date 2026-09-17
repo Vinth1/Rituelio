@@ -320,7 +320,7 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
   }
   {
     const r = await B.appel("PUT", "/api/ma-classe/notes", { tacheId: tacheA, eleveId: eleveA, points: 0, commentaire: "" });
-    const note = (await carnetA()).notes.find((n: Json) => n.eleveId === eleveA);
+    const note = (await carnetA()).notes.find((n: Json) => n.tacheId === tacheA && n.eleveId === eleveA);
     verifier("B ne peut pas modifier une note de A", refuse(r) && note?.points === 15, `statut ${r.status}`);
   }
   {
@@ -511,15 +511,20 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
     const r = await B.appel("GET", `/api/evaluations?classeId=${classeA}`);
     verifier("B ne voit pas l'historique des évaluations de A", r.json?.evaluations?.length === 0, `statut ${r.status}`);
   }
+  let codeB = "";
   {
-    await B.appel("POST", "/api/evaluations", {
-      name: "Éval B",
-      classeId: classeA,
-      classeNom: "Classe A",
-      date: "2026-09-15",
-      verbes: [{ infinitif: "chanter", temps: "présent", mode: "indicatif" }],
-      contraintes: [],
-    });
+    codeB = exiger(
+      await B.appel("POST", "/api/evaluations", {
+        name: "Éval B",
+        classeId: classeA,
+        classeNom: "Classe A",
+        date: "2026-09-15",
+        verbes: [{ infinitif: "chanter", temps: "présent", mode: "indicatif" }],
+        contraintes: [],
+      }),
+      201,
+      "évaluation de B",
+    ).code;
     const evals = (await A.appel("GET", `/api/evaluations?classeId=${classeA}`)).json.evaluations;
     verifier(
       "Une évaluation de B ne s'accroche pas à une classe de A",
@@ -547,27 +552,79 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
   {
     const r = await B.appel("GET", `/api/evaluations/${codeA}/copies`);
     const lues = Array.isArray(r.json?.copies) ? r.json.copies.length : 0;
-    verifier("B ne lit pas les copies de A", refuse(r) || lues === 0, `statut ${r.status}, ${lues} copie(s) lue(s)`);
+    verifier("B ne lit pas les copies de A", refuse(r) && lues === 0, `statut ${r.status}, ${lues} copie(s) lue(s)`);
   }
+  const copieDeA = async () =>
+    (await A.appel("GET", `/api/evaluations/${codeA}/copies`)).json.copies.find((c: Json) => c.id === copieA);
+  const intacte = (copie: Json) =>
+    copie?.commentaire === "" && copie?.noteForcee === null && copie?.contraintes.every((c: Json) => !c.validee);
+  const correctionPirate = { contraintesValidees: ["Contrainte A"], commentaire: "Commentaire pirate", noteForcee: 0 };
   {
-    const r = await B.appel("PATCH", `/api/evaluations/${codeA}/copies/${copieA}`, {
-      contraintesValidees: ["Contrainte A"],
-      commentaire: "Commentaire pirate",
-      noteForcee: 0,
-    });
-    const copie = (await A.appel("GET", `/api/evaluations/${codeA}/copies`)).json.copies.find(
-      (c: Json) => c.id === copieA,
-    );
+    const r = await B.appel("PATCH", `/api/evaluations/${codeA}/copies/${copieA}`, correctionPirate);
+    const copie = await copieDeA();
     verifier(
       "B ne peut pas corriger une copie de A",
-      copie?.commentaire === "" && copie?.noteForcee === null && copie?.contraintes.every((c: Json) => !c.validee),
+      refuse(r) && intacte(copie),
+      `statut ${r.status} ; copie de A : note forcée ${copie?.noteForcee}, commentaire « ${copie?.commentaire} »`,
+    );
+  }
+  {
+    const r = await B.appel("PATCH", `/api/evaluations/${codeB}/copies/${copieA}`, correctionPirate);
+    const copie = await copieDeA();
+    verifier(
+      "… ni en passant par le code de sa propre évaluation",
+      refuse(r) && intacte(copie),
       `statut ${r.status} ; copie de A : note forcée ${copie?.noteForcee}, commentaire « ${copie?.commentaire} »`,
     );
   }
   {
     const r = await B.appel("PATCH", `/api/evaluations/${codeA}`, { statut: "terminee" });
     const statut = (await anonyme("GET", `/api/evaluations/${codeA}`)).json?.evaluation?.status;
-    verifier("B ne peut pas clôturer une évaluation de A", statut === "ouverte", `statut ${r.status} ; évaluation de A : ${statut}`);
+    verifier(
+      "B ne peut pas clôturer une évaluation de A",
+      refuse(r) && statut === "ouverte",
+      `statut ${r.status} ; évaluation de A : ${statut}`,
+    );
+  }
+
+  // Contrôles inverses : un filtre qui refuserait tout le monde passerait les
+  // vérifications ci-dessus. Le propriétaire doit garder la main.
+  section("Évaluations de conjugaison : A garde la main");
+  {
+    const r = await A.appel("PATCH", `/api/evaluations/${codeA}/copies/${copieA}`, {
+      contraintesValidees: ["Contrainte A"],
+      commentaire: "Bien",
+      noteForcee: 18,
+    });
+    const copie = await copieDeA();
+    verifier(
+      "A corrige sa copie",
+      r.status === 200 && copie?.commentaire === "Bien" && copie?.noteForcee === 18 && copie?.contraintes[0]?.validee === true,
+      `statut ${r.status}`,
+    );
+  }
+  {
+    const r = await A.appel("GET", `/api/evaluations/${codeA}/carnet`);
+    const s = await A.appel("POST", `/api/evaluations/${codeA}/carnet`, {
+      matiereId: matiereA,
+      trimestre: 1,
+      dateISO: "2026-09-15",
+      nom: "Éval A importée",
+      ponderation: 1,
+      attributions: [{ submissionId: copieA, eleveId: eleveA }],
+      absents: [],
+    });
+    const importee = (await carnetA()).taches.find((t: Json) => t.nom === "Éval A importée");
+    verifier(
+      "A envoie son évaluation dans son carnet",
+      r.status === 200 && r.json?.preparation?.copies?.length === 1 && s.status === 201 && !!importee,
+      `statuts ${r.status} / ${s.status}`,
+    );
+  }
+  {
+    const r = await A.appel("PATCH", `/api/evaluations/${codeA}`, { statut: "terminee" });
+    const statut = (await anonyme("GET", `/api/evaluations/${codeA}`)).json?.evaluation?.status;
+    verifier("A clôture son évaluation", r.status === 200 && statut === "terminee", `statut ${r.status} ; évaluation : ${statut}`);
   }
 
   // En dernier : tant que le trou existe, ces écritures suppriment des données de A
@@ -591,7 +648,7 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
       ids(classe?.eleves).includes(eleveA),
       `${classe?.eleves.length ?? 0} élève(s) restant(s) dans la classe de A`,
     );
-    const note = (await carnetA()).notes.find((n: Json) => n.eleveId === eleveA);
+    const note = (await carnetA()).notes.find((n: Json) => n.tacheId === tacheA && n.eleveId === eleveA);
     const faits = (await A.appel("GET", `/api/ma-classe/comportement?classeId=${classeA}`)).json.faits;
     verifier(
       "… ni, par cascade, effacer ses notes et ses faits de comportement",
