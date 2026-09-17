@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/migrate.mts",
+    "db:diagnostic": "node scripts/diagnostic-cloisonnement.mts",
+    "test:cloisonnement": "node scripts/verifier-cloisonnement.mts",
     "test": "node --test \"lib/**/*.test.mts\""
   },
   "dependencies": {
