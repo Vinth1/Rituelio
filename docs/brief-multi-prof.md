@@ -2,7 +2,7 @@
 
 > **État d'avancement** : cadrage validé le 2026-09-17. PR 1 (documentation,
 > diagnostic et script de vérification) livrée (#9). PR 2 (évaluations de
-> conjugaison) en revue. Prochaines étapes : PR 3 (écriture des classes), puis
+> conjugaison, #10) et PR 3 (écriture des classes) en revue. Prochaine étape :
 > ouverture.
 >
 > Pilier 1 de [`vision.md`](vision.md). Audit fait sur `main` = `b8028f5`.
@@ -181,24 +181,32 @@ transmettre le code d'inscription.**
   évaluation) et contrôles inverses (A corrige, envoie au carnet et clôture son
   évaluation).
 - **Test** : 53 vérifications, 49 ✅ ; les 4 ❌ restants sont ceux du Trou 2.
-- **Mise en prod : migrer AVANT de merger** (§6), depuis la branche de la PR. L'ancien
-  code écrit toujours un `user_id` et supporte la colonne obligatoire ; le nouveau code
-  sans migration rendrait invisibles d'éventuelles évaluations sans propriétaire.
+- **Mise en prod** : le mode évaluation de conjugaison n'a pas encore servi en prod, et
+  le code écrit toujours un `user_id` : aucune évaluation sans propriétaire ne peut y
+  exister. La PR se merge donc sans attendre ; la migration (colonne obligatoire) est
+  appliquée à l'ouverture, après le diagnostic (§6). Si des évaluations avaient servi
+  entre-temps, migrer avant de merger reste l'ordre sûr.
 
 ### PR 3 — Écriture des classes cloisonnée (Trou 2)
 
-- `remplacerClasses` : dans la transaction et **avant toute écriture**, refus (409) si un
+- `remplacerClasses` : dans la transaction et **avant toute écriture**, refus si un
   identifiant de classe ou d'élève envoyé appartient à un autre compte ; rien n'est
-  écrit. En double sécurité, `ON CONFLICT … DO UPDATE … WHERE` sur le propriétaire.
-- `GestionClasses` affiche l'erreur au lieu d'un simple « erreur ».
-- **Test** : `npm run test:cloisonnement` entièrement vert. À la main : ajouter,
-  renommer et supprimer classes et élèves ; carnet et comportement intacts.
+  écrit. En double sécurité dans le SQL : l'upsert de classe ne met à jour que les
+  classes du prof (`ON CONFLICT … DO UPDATE … WHERE`), la purge des élèves ne vise que
+  ses classes. Les deux gardes SQL ont été vérifiées seules, sans le contrôle préalable.
+- `PUT /api/classes` répond 409 ; `GestionClasses` affiche le motif au lieu de l'échec
+  générique. Pas de migration.
+- Script : refus exigé pour B, et contrôles inverses (A renomme sa classe et un élève,
+  en ajoute un puis le retire, sans toucher aux autres ni à leurs notes).
+- **Test** : `npm run test:cloisonnement` entièrement vert (56 ✅). Classe sans élève et
+  suppression de toutes les classes vérifiées à part.
 
 ### Ouverture (sans code)
 
-1. PR 2 migrée en prod (§6) puis mergée, PR 3 mergée et déployée.
-2. `npm run db:diagnostic` sur la prod : aucun lien entre comptes, aucune évaluation
-   sans propriétaire.
+1. PR 2 et PR 3 mergées et déployées.
+2. Sur la prod (§6), depuis `main` à jour : sauvegarde Neon, `npm run db:diagnostic`
+   (aucun lien entre comptes), `npm run db:migrate`, puis de nouveau
+   `npm run db:diagnostic` (« Rien à signaler »).
 3. Nouveau `CLE_INSCRIPTION` (§3), transmis au collègue.
 4. Après son inscription, retrait de `CLE_INSCRIPTION`.
 
