@@ -24,6 +24,8 @@ export default function GestionClasses() {
   const [charge, setCharge] = useState(false);
   const [nomNouvelleClasse, setNomNouvelleClasse] = useState("");
   const [sauvegarde, setSauvegarde] = useState<EtatSauvegarde>("idle");
+  // Motif d'un refus explicite du serveur (409), affiché à la place de l'échec générique.
+  const [refusServeur, setRefusServeur] = useState("");
   const [peutImporter, setPeutImporter] = useState(false);
   // Dernier état sérialisé envoyé/chargé : évite un PUT inutile juste après le chargement.
   const dernierEnvoi = useRef<string>("");
@@ -67,12 +69,18 @@ export default function GestionClasses() {
     if (serialise === dernierEnvoi.current) return;
     setSauvegarde("en-cours");
     const t = setTimeout(async () => {
+      setRefusServeur("");
       try {
         const r = await fetch("/api/classes", {
           method: "PUT",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ classes }),
         });
+        if (r.status === 409) {
+          // Classes ou élèves d'un autre compte : le serveur n'a rien écrit.
+          const data = (await r.json().catch(() => null)) as { erreur?: string } | null;
+          setRefusServeur(data?.erreur ?? "");
+        }
         if (!r.ok) throw new Error("échec");
         dernierEnvoi.current = serialise;
         enregistrerClasses(classes); // miroir local pour les jeux
@@ -182,7 +190,9 @@ export default function GestionClasses() {
         }`}
         aria-live="polite"
       >
-        {messageSauvegarde[sauvegarde] || " "}
+        {sauvegarde === "erreur" && refusServeur
+          ? `⚠ ${refusServeur}`
+          : messageSauvegarde[sauvegarde] || " "}
       </p>
 
       {/* Proposition d'import des classes locales (une seule fois) */}
