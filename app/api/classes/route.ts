@@ -1,6 +1,7 @@
 // API des classes & élèves (prof authentifié).
 //  - GET /api/classes : toutes les classes du prof (avec leurs élèves)
 //  - PUT /api/classes : remplace l'ensemble des classes du prof { classes: Classe[] }
+//    (409 si l'envoi contient une classe ou un élève d'un autre compte)
 export const dynamic = "force-dynamic";
 
 import { classesDeProf, remplacerClasses } from "@/lib/serveur/classes";
@@ -47,6 +48,8 @@ export async function PUT(request: Request) {
     }
     classes.push({ id: cc.id, nom: cc.nom, eleves });
   }
-  await remplacerClasses(session.userId, classes);
+  const res = await remplacerClasses(session.userId, classes);
+  // 409 : ids d'un autre compte dans l'envoi ; rien n'a été écrit.
+  if (!res.ok) return Response.json({ erreur: res.erreur }, { status: 409 });
   return Response.json({ ok: true });
 }

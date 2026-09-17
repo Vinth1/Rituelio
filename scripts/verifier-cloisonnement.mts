@@ -627,7 +627,7 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
     verifier("A clôture son évaluation", r.status === 200 && statut === "terminee", `statut ${r.status} ; évaluation : ${statut}`);
   }
 
-  // En dernier : tant que le trou existe, ces écritures suppriment des données de A
+  // En dernier : si un trou réapparaît, ces écritures suppriment des données de A
   // (et, par cascade, ses notes et faits de comportement).
   section("Classes & élèves (écriture)");
   {
@@ -635,14 +635,22 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
       classes: [{ ...classesB[0], eleves: [...classesB[0].eleves, { id: eleveA, nom: "Élève piraté" }] }],
     });
     const eleve = (await classesDeA()).find((c) => c.id === classeA)?.eleves.find((e: Json) => e.id === eleveA);
-    verifier("B ne peut pas renommer un élève de A", eleve?.nom === "Élève A", `statut ${r.status} ; élève de A : « ${eleve?.nom} »`);
+    verifier(
+      "B ne peut pas renommer un élève de A",
+      refuse(r) && eleve?.nom === "Élève A",
+      `statut ${r.status} ; élève de A : « ${eleve?.nom} »`,
+    );
   }
   {
     const r = await B.appel("PUT", "/api/classes", {
       classes: [...classesB, { id: classeA, nom: "Classe piratée", eleves: [] }],
     });
     const classe = (await classesDeA()).find((c) => c.id === classeA);
-    verifier("B ne peut pas renommer une classe de A", classe?.nom === "Classe A", `statut ${r.status} ; classe de A : « ${classe?.nom} »`);
+    verifier(
+      "B ne peut pas renommer une classe de A",
+      refuse(r) && classe?.nom === "Classe A",
+      `statut ${r.status} ; classe de A : « ${classe?.nom} »`,
+    );
     verifier(
       "B ne peut pas vider une classe de A",
       ids(classe?.eleves).includes(eleveA),
@@ -654,6 +662,51 @@ async function scenario(A: Prof, B: Prof, suffixe: string, nettoyages: (() => Pr
       "… ni, par cascade, effacer ses notes et ses faits de comportement",
       note?.points === 15 && ids(faits).includes(faitA),
       `note ${note ? "présente" : "effacée"}, fait ${ids(faits).includes(faitA) ? "présent" : "effacé"}`,
+    );
+  }
+  {
+    const r = await B.appel("GET", "/api/classes");
+    verifier(
+      "Les envois refusés n'ont rien changé aux classes de B",
+      r.status === 200 && r.json.classes.length === 1 && r.json.classes[0].eleves.length === 1,
+      `statut ${r.status}`,
+    );
+  }
+
+  // Contrôles inverses : le filtre ne doit pas bloquer le propriétaire.
+  section("Classes & élèves : A garde la main");
+  {
+    const eleveNouveau = crypto.randomUUID();
+    const r = await A.appel("PUT", "/api/classes", {
+      classes: [
+        {
+          id: classeA,
+          nom: "Classe A renommée",
+          eleves: [
+            { id: eleveA, nom: "Élève A renommé" },
+            { id: eleveNouveau, nom: "Nouvel élève" },
+          ],
+        },
+      ],
+    });
+    const classe = (await classesDeA()).find((c) => c.id === classeA);
+    verifier(
+      "A renomme sa classe, renomme un élève et en ajoute un",
+      r.status === 200 &&
+        classe?.nom === "Classe A renommée" &&
+        classe?.eleves.find((e: Json) => e.id === eleveA)?.nom === "Élève A renommé" &&
+        ids(classe?.eleves).includes(eleveNouveau),
+      `statut ${r.status}`,
+    );
+    const s = await A.appel("PUT", "/api/classes", {
+      classes: [{ id: classeA, nom: "Classe A renommée", eleves: [{ id: eleveA, nom: "Élève A renommé" }] }],
+    });
+    const apres = (await classesDeA()).find((c) => c.id === classeA);
+    const note = (await carnetA()).notes.find((n: Json) => n.tacheId === tacheA && n.eleveId === eleveA);
+    verifier(
+      "A retire un élève sans toucher aux autres ni à leurs notes",
+      s.status === 200 && ids(apres?.eleves).join() === eleveA && note?.points === 15,
+      `statut ${s.status}`,
     );
   }
 }
