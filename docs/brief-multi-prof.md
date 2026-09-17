@@ -1,8 +1,9 @@
 # Brief — Ouverture multi-prof
 
 > **État d'avancement** : cadrage validé le 2026-09-17. PR 1 (documentation,
-> diagnostic et script de vérification) en revue. Prochaines étapes : PR 2
-> (évaluations de conjugaison), puis PR 3 (écriture des classes), puis ouverture.
+> diagnostic et script de vérification) livrée (#9). PR 2 (évaluations de
+> conjugaison) en revue. Prochaines étapes : PR 3 (écriture des classes), puis
+> ouverture.
 >
 > Pilier 1 de [`vision.md`](vision.md). Audit fait sur `main` = `b8028f5`.
 
@@ -166,16 +167,23 @@ transmettre le code d'inscription.**
 ### PR 2 — Évaluations de conjugaison filtrées par propriétaire (Trou 1)
 
 - `copiesDe`, `terminer`, `forcerNote`, `fixerCommentaire`,
-  `definirContraintesValidees` reçoivent `userId` et filtrent sur `sessions.user_id` ;
-  une copie doit appartenir à l'évaluation du `code` de l'URL.
-- Routes : 404 si l'évaluation n'est pas au prof. `import-carnet.ts` adapté.
+  `definirContraintesValidees` reçoivent `userId` et filtrent sur `sessions.user_id`,
+  écritures comprises ; `copieDuProf` vérifie qu'une copie appartient à l'évaluation du
+  `code` de l'URL, et celle-ci au prof.
+- Routes : 404 pour une évaluation ou une copie d'un autre prof. `import-carnet.ts`
+  adapté.
 - `schema.sql` : rattachement des `sessions` sans propriétaire, **uniquement s'il n'existe
   qu'un compte**, puis `user_id` obligatoire. Avec plusieurs comptes et des lignes sans
   propriétaire, la migration échoue et s'annule entièrement : rien n'est perdu, on
-  tranche à la main.
-- **Test** : les 3 vérifications « Évaluations de conjugaison » passent au vert. À la
-  main : créer une évaluation, envoyer une copie élève, corriger /20, envoyer au carnet.
-- **Mise en prod** : voir §6 (sauvegarde → diagnostic → migration).
+  tranche à la main. Vérifié en local : un compte, deux comptes, migration rejouée,
+  base neuve.
+- Script : nouveau cas (B corrige une copie de A via le code de **sa** propre
+  évaluation) et contrôles inverses (A corrige, envoie au carnet et clôture son
+  évaluation).
+- **Test** : 53 vérifications, 49 ✅ ; les 4 ❌ restants sont ceux du Trou 2.
+- **Mise en prod : migrer AVANT de merger** (§6), depuis la branche de la PR. L'ancien
+  code écrit toujours un `user_id` et supporte la colonne obligatoire ; le nouveau code
+  sans migration rendrait invisibles d'éventuelles évaluations sans propriétaire.
 
 ### PR 3 — Écriture des classes cloisonnée (Trou 2)
 
@@ -188,7 +196,7 @@ transmettre le code d'inscription.**
 
 ### Ouverture (sans code)
 
-1. PR 2 mergée et migrée en prod (§6), PR 3 mergée et déployée.
+1. PR 2 migrée en prod (§6) puis mergée, PR 3 mergée et déployée.
 2. `npm run db:diagnostic` sur la prod : aucun lien entre comptes, aucune évaluation
    sans propriétaire.
 3. Nouveau `CLE_INSCRIPTION` (§3), transmis au collègue.
@@ -235,7 +243,8 @@ vercel env pull .env.production.local --environment=production
 # 2. Copier la valeur de DATABASE_URL de ce fichier, puis :
 $env:DATABASE_URL = "<URL de prod>"
 npm run db:diagnostic          # lecture seule
-npm run db:migrate             # seulement après la sauvegarde ci-dessous
+npm run db:migrate             # après la sauvegarde ci-dessous, depuis la branche
+                               # dont on veut appliquer le schema.sql
 Remove-Item Env:DATABASE_URL   # revenir à la base locale
 Remove-Item .env.production.local
 ```
