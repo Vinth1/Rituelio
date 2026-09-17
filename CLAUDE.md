@@ -73,10 +73,21 @@ dynamiques et sensibles. Client SQL : le paquet `postgres` (postgres.js), requê
   `npm run db:migrate` (idempotent). À rejouer après toute évolution.
 - **Auth prof** : cookie httpOnly `rituelio_prof`, mot de passe **haché en base**
   (jamais en clair côté client). L'**espace prof** (`/prof`, `/classe`, API prof)
-  est protégé **côté serveur** ; l'**espace élève** reste public. Un seul compte
-  pour l'instant, mais la table accepte déjà le multi-comptes.
-- **Cloisonnement** : chaque donnée prof/sensible porte un `user_id` et est filtrée
-  par propriétaire.
+  est protégé **côté serveur** ; l'**espace élève** reste public. Plusieurs
+  comptes possibles (inscription par `CLE_INSCRIPTION`), ouverture en cours :
+  voir `docs/brief-multi-prof.md`.
+- **Cloisonnement** : un compte = un silo complet, **aucun partage entre profs**
+  (deux profs d'une même classe réelle en gèrent chacun leur version). Chaque
+  donnée prof/sensible porte un `user_id` et est filtrée par propriétaire.
+  Pour toute route ou requête prof :
+  - lire `session.userId`, jamais un propriétaire envoyé par le navigateur ;
+  - filtrer sur `user_id` **aussi** les mises à jour, suppressions et recherches
+    par code ; passer par une jointure pour les tables sans `user_id` ;
+  - vérifier que tout identifiant reçu servant de lien (`classeId`, `eleveId`…)
+    appartient au prof, y compris dans un upsert `ON CONFLICT (id)` ;
+  - ajouter les cas du module à `scripts/verifier-cloisonnement.mts`
+    (`npm run test:cloisonnement`, local uniquement). `npm run db:diagnostic`
+    contrôle une base en lecture seule.
 - **Variables d'environnement** (`.env.local`, cf. `.env.example`) : `DATABASE_URL`
   (obligatoire), `PROF_MOT_DE_PASSE` (amorçage du compte au 1er login),
   `CLE_INSCRIPTION` (optionnel, ouvre `/inscription`), `BLOB_READ_WRITE_TOKEN`
@@ -128,5 +139,6 @@ fiche/jeu = un nouvel objet dans le tableau `jeux`.
   (cartes arrondies, Fredoka/Nunito, couleurs via `lib/couleurs.ts`).
 - Toutes les données de l'espace prof et de « Ma classe » sont servies
   uniquement aux requêtes authentifiées (élèves mineurs, RGPD).
-- Les specs des grandes fonctionnalités vivent dans `docs/`
-  (`brief-ma-classe.md` = plan par PR de la catégorie « Ma classe »).
+- Les specs des grandes fonctionnalités vivent dans `docs/` : `vision.md` (cap et
+  ordre des chantiers), `brief-ma-classe.md` (plan par PR de « Ma classe »),
+  `brief-multi-prof.md` (ouverture à plusieurs comptes, règles de cloisonnement).
