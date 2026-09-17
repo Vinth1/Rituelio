@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
   code TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  user_id TEXT REFERENCES prof_users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES prof_users(id) ON DELETE CASCADE,
   class_id TEXT REFERENCES classes(id) ON DELETE SET NULL,  -- FK + snapshot du nom
   class_name TEXT NOT NULL,
   date TEXT NOT NULL,
@@ -51,6 +51,14 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_class ON sessions(class_id);
+-- Multi-prof : une évaluation a toujours un propriétaire (colonne nullable sur les
+-- bases créées avant). Les éventuelles évaluations sans propriétaire sont
+-- rattachées au compte unique, SEULEMENT s'il n'en existe qu'un. Sinon SET NOT NULL
+-- échoue et toute la migration s'annule : à trancher à la main (cf.
+-- docs/brief-multi-prof.md, `npm run db:diagnostic`).
+UPDATE sessions SET user_id = (SELECT id FROM prof_users LIMIT 1)
+  WHERE user_id IS NULL AND (SELECT count(*) FROM prof_users) = 1;
+ALTER TABLE sessions ALTER COLUMN user_id SET NOT NULL;
 CREATE TABLE IF NOT EXISTS session_items (
   id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,

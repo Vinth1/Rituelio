@@ -88,7 +88,7 @@ export async function preparerImport(
 ): Promise<PreparationImport | null> {
   const s = await sessionDuProf(userId, code);
   if (!s) return null;
-  const copiesCorrigees = await copiesDe(code);
+  const copiesCorrigees = (await copiesDe(userId, code)) ?? [];
   const copies: CopieAImporter[] = copiesCorrigees.map((c) => ({
     submissionId: c.id,
     prenom: c.prenom,
@@ -126,7 +126,7 @@ export async function importerEvalVersCarnet(
   const rosterIds = new Set(roster.map((e) => e.id));
 
   // Notes de référence (recalculées côté serveur — source de vérité).
-  const copies = await copiesDe(code);
+  const copies = (await copiesDe(userId, code)) ?? [];
   const parSubmission = new Map(copies.map((c) => [c.id, c]));
 
   // Validation des attributions.
