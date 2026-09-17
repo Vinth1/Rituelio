@@ -1,10 +1,11 @@
 // Une évaluation précise (par code).
 //  - GET   /api/evaluations/[code]  : infos publiques pour l'élève (sans réponses)
 //  - PATCH /api/evaluations/[code]  : { statut: "terminee" } pour clôturer
+//    (propriétaire uniquement : 404 pour l'évaluation d'un autre prof)
 export const dynamic = "force-dynamic";
 
 import { evaluationParCode, terminer } from "@/lib/serveur/evaluations";
-import { refuserSiNonProf } from "@/lib/serveur/session-prof";
+import { sessionProf } from "@/lib/serveur/session-prof";
 
 type Ctx = { params: Promise<{ code: string }> };
 
@@ -18,14 +19,18 @@ export async function GET(_request: Request, ctx: Ctx) {
 }
 
 export async function PATCH(request: Request, ctx: Ctx) {
-  const refus = await refuserSiNonProf();
-  if (refus) return refus;
+  const session = await sessionProf();
+  if (!session) {
+    return Response.json({ erreur: "Non autorisé" }, { status: 401 });
+  }
   const { code } = await ctx.params;
   const body = (await request.json().catch(() => null)) as {
     statut?: string;
   } | null;
   if (body?.statut === "terminee") {
-    await terminer(code);
+    if (!(await terminer(session.userId, code))) {
+      return Response.json({ erreur: "Évaluation introuvable" }, { status: 404 });
+    }
     return Response.json({ ok: true });
   }
   return Response.json({ erreur: "Action inconnue" }, { status: 400 });

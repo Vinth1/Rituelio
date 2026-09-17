@@ -265,9 +265,15 @@ async function corriger(
 }
 
 // --- Copies corrigées (prof) ---
-export async function copiesDe(code: string): Promise<CopieCorrigee[]> {
-  const [s] = await sql()`SELECT id FROM sessions WHERE code = ${code}`;
-  if (!s) return [];
+// Null si l'évaluation n'existe pas ou appartient à un autre prof.
+export async function copiesDe(
+  userId: string,
+  code: string,
+): Promise<CopieCorrigee[] | null> {
+  const [s] = await sql()`
+    SELECT id FROM sessions WHERE code = ${code} AND user_id = ${userId}
+  `;
+  if (!s) return null;
   const sessionId = (s as { id: string }).id;
   const items = (await sql()`
     SELECT infinitive, tense, grammatical_mode, order_index, formes FROM session_items
@@ -281,12 +287,33 @@ export async function copiesDe(code: string): Promise<CopieCorrigee[]> {
 }
 
 // --- Corrections du prof ---
+// Une copie se désigne par (code, id) : elle doit appartenir à l'évaluation de ce
+// code ET l'évaluation au prof. Chaque écriture refiltre, même après ce contrôle.
+
+// Vrai si la copie existe dans l'évaluation `code` et que celle-ci est au prof.
+export async function copieDuProf(
+  userId: string,
+  code: string,
+  submissionId: string,
+): Promise<boolean> {
+  const [row] = await sql()`
+    SELECT 1 FROM submissions x JOIN sessions s ON s.id = x.session_id
+    WHERE x.id = ${submissionId} AND s.code = ${code} AND s.user_id = ${userId}
+  `;
+  return !!row;
+}
+
 export async function definirContraintesValidees(
+  userId: string,
+  code: string,
   submissionId: string,
   labelsValides: string[],
 ): Promise<void> {
   const rows = (await sql()`
-    SELECT id, label FROM submission_constraints WHERE submission_id = ${submissionId}
+    SELECT sc.id, sc.label FROM submission_constraints sc
+    JOIN submissions x ON x.id = sc.submission_id
+    JOIN sessions s ON s.id = x.session_id
+    WHERE sc.submission_id = ${submissionId} AND s.code = ${code} AND s.user_id = ${userId}
   `) as unknown as { id: string; label: string }[];
   await transaction(async (tx) => {
     for (const r of rows) {
@@ -299,21 +326,41 @@ export async function definirContraintesValidees(
 }
 
 export async function fixerCommentaire(
+  userId: string,
+  code: string,
   submissionId: string,
   texte: string,
 ): Promise<void> {
-  await sql()`UPDATE submissions SET teacher_comment = ${texte} WHERE id = ${submissionId}`;
+  await sql()`
+    UPDATE submissions x SET teacher_comment = ${texte}
+    FROM sessions s
+    WHERE x.id = ${submissionId} AND s.id = x.session_id
+      AND s.code = ${code} AND s.user_id = ${userId}
+  `;
 }
 
 export async function forcerNote(
+  userId: string,
+  code: string,
   submissionId: string,
   note: number | null,
 ): Promise<void> {
-  await sql()`UPDATE submissions SET forced_note = ${note} WHERE id = ${submissionId}`;
+  await sql()`
+    UPDATE submissions x SET forced_note = ${note}
+    FROM sessions s
+    WHERE x.id = ${submissionId} AND s.id = x.session_id
+      AND s.code = ${code} AND s.user_id = ${userId}
+  `;
 }
 
-export async function terminer(code: string): Promise<void> {
-  await sql()`UPDATE sessions SET status = 'terminee' WHERE code = ${code}`;
+// Vrai si l'évaluation a été clôturée (false : inconnue ou à un autre prof).
+export async function terminer(userId: string, code: string): Promise<boolean> {
+  const lignes = await sql()`
+    UPDATE sessions SET status = 'terminee'
+    WHERE code = ${code} AND user_id = ${userId}
+    RETURNING id
+  `;
+  return lignes.length > 0;
 }
 
 // --- Historique par classe ---
