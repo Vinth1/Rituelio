@@ -100,12 +100,18 @@ export async function creerCompte(p: {
   return { ok: true, userId };
 }
 
-// Vérifie le code d'inscription (CLE_INSCRIPTION). Sans variable d'environnement,
-// l'inscription est désactivée (renvoie toujours false).
+// Les inscriptions sont ouvertes tant que CLE_INSCRIPTION est définie (et non vide).
+export function inscriptionsOuvertes(): boolean {
+  return Boolean(process.env.CLE_INSCRIPTION?.trim());
+}
+
+// Vérifie le code d'inscription (CLE_INSCRIPTION). Les espaces autour du code (copier-
+// coller) sont ignorés des deux côtés. Sans variable d'environnement, l'inscription
+// est désactivée (renvoie toujours false).
 export function verifierCleInscription(cle: string): boolean {
-  const attendu = process.env.CLE_INSCRIPTION;
+  const attendu = process.env.CLE_INSCRIPTION?.trim();
   if (!attendu) return false;
-  const a = Buffer.from(cle);
+  const a = Buffer.from(cle.trim());
   const b = Buffer.from(attendu);
   return a.length === b.length && timingSafeEqual(a, b);
 }

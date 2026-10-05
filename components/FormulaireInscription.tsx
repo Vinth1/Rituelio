@@ -83,10 +83,17 @@ export default function FormulaireInscription() {
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
           Code d’inscription
+          {/* Champ visible et sans remplissage automatique : masqué, il pouvait recevoir
+              le mot de passe enregistré par le navigateur, et les fautes de frappe
+              (majuscules, @ au clavier AZERTY) passaient inaperçues. */}
           <input
-            type="password"
+            type="text"
             value={cleInscription}
             onChange={(e) => setCleInscription(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             className={champ}
           />
         </label>

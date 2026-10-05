@@ -10,6 +10,7 @@ import {
   MAXAGE_SESSION_S,
   creerCompte,
   creerSession,
+  inscriptionsOuvertes,
   verifierCleInscription,
 } from "@/lib/serveur/auth";
 
@@ -28,6 +29,12 @@ export async function POST(request: Request) {
   const motDePasse = typeof body?.motDePasse === "string" ? body.motDePasse : "";
   const cle = typeof body?.cleInscription === "string" ? body.cleInscription : "";
 
+  if (!inscriptionsOuvertes()) {
+    return Response.json(
+      { erreur: "Les inscriptions sont fermées." },
+      { status: 403 },
+    );
+  }
   if (!verifierCleInscription(cle)) {
     return Response.json(
       { erreur: "Code d'inscription invalide." },

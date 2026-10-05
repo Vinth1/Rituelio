@@ -4,9 +4,10 @@
 // caractères pour la projection. Le temps est ancré sur Date.now() (départ +
 // durée accumulée aux pauses) plutôt que compté tick par tick : l'affichage ne
 // dérive donc pas, même si le navigateur ralentit les minuteries.
-// Le bip de fin est synthétisé (aucun fichier audio) et n'est armé qu'après un
-// clic sur « Démarrer », ce qu'exigent les règles de lecture automatique.
+// Le bip de fin (lib/bip.ts) n'est armé qu'après un clic sur « Démarrer », ce
+// qu'exigent les règles de lecture automatique.
 import { useEffect, useRef, useState } from "react";
+import { bip } from "@/lib/bip";
 
 type Mode = "chrono" | "minuteur";
 
@@ -30,30 +31,6 @@ function formater(ms: number, avecDixieme: boolean): string {
       ? `${heures}:${deuxChiffres(minutes)}:${deuxChiffres(secondes)}`
       : `${deuxChiffres(minutes)}:${deuxChiffres(secondes)}`;
   return avecDixieme ? `${base},${Math.floor(total / 100) % 10}` : base;
-}
-
-// Trois brèves notes de fin. Silencieux si l'API audio n'est pas disponible.
-function bip() {
-  try {
-    const ctx = new AudioContext();
-    const debut = ctx.currentTime;
-    for (let i = 0; i < 3; i++) {
-      const depart = debut + i * 0.25;
-      const osc = ctx.createOscillator();
-      const volume = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 880;
-      volume.gain.setValueAtTime(0.0001, depart);
-      volume.gain.exponentialRampToValueAtTime(0.3, depart + 0.02);
-      volume.gain.exponentialRampToValueAtTime(0.0001, depart + 0.2);
-      osc.connect(volume).connect(ctx.destination);
-      osc.start(depart);
-      osc.stop(depart + 0.22);
-    }
-    setTimeout(() => void ctx.close(), 1500);
-  } catch {
-    /* pas de son : l'outil reste utilisable */
-  }
 }
 
 export default function ChronoMinuteur() {

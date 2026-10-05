@@ -6,6 +6,9 @@
 // amène son secteur sous le repère : la roue ne « triche » donc jamais à
 // l'arrivée. Le dessin et l'animation vivent dans `components/Roue.tsx`,
 // partagés avec le jeu « Roue des verbes ».
+// Sans remise, les élèves déjà passés sont gardés par classe dans le
+// localStorage (`lib/roue-des-prenoms.ts`) : sans cela, chaque séance repartait
+// de zéro et retombait souvent sur les élèves de la séance précédente.
 // Accessibilité : la rotation est une transition CSS, que le bloc
 // prefers-reduced-motion de globals.css réduit déjà à un tirage instantané ;
 // le résultat est annoncé dans une zone aria-live.
@@ -13,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Roue, { DUREE_MS, angleVers } from "@/components/Roue";
 import { type Classe, chargerClasses } from "@/lib/classes";
+import { chargerEtatRoue, enregistrerEtatRoue } from "@/lib/roue-des-prenoms";
 
 // Index tiré au hasard dans [0, longueur[. Hors du composant, comme dans les
 // autres jeux : le compilateur React refuse un appel direct à Math.random dans
@@ -21,12 +25,22 @@ function indexAleatoire(longueur: number): number {
   return Math.floor(Math.random() * longueur);
 }
 
+// Ajoute l'élève `eleveId` aux passés de la classe `classeId`, sans doublon.
+function avecPasse(
+  passes: Record<string, string[]>,
+  classeId: string,
+  eleveId: string,
+): Record<string, string[]> {
+  const deja = passes[classeId] ?? [];
+  return deja.includes(eleveId) ? passes : { ...passes, [classeId]: [...deja, eleveId] };
+}
+
 export default function RoueDesPrenoms() {
   const [classes, setClasses] = useState<Classe[]>([]);
   const [classeActiveId, setClasseActiveId] = useState<string | null>(null);
   const [charge, setCharge] = useState(false);
-  // Élèves déjà sortis de la roue (mode « sans remise »).
-  const [tires, setTires] = useState<string[]>([]);
+  // Élèves déjà sortis de la roue (mode « sans remise »), par classe.
+  const [passes, setPasses] = useState<Record<string, string[]>>({});
   const [gagnantId, setGagnantId] = useState<string | null>(null);
   const [sansRemise, setSansRemise] = useState(false);
   const [angle, setAngle] = useState(0); // cumulatif : la roue avance toujours
@@ -52,8 +66,11 @@ export default function RoueDesPrenoms() {
       }
       if (liste.length === 0) liste = chargerClasses();
       if (!actif) return;
+      const etat = chargerEtatRoue();
       setClasses(liste);
       setClasseActiveId(liste[0]?.id ?? null);
+      setSansRemise(etat.sansRemise);
+      setPasses(etat.passes);
       setCharge(true);
     })();
     return () => {
@@ -68,21 +85,46 @@ export default function RoueDesPrenoms() {
     };
   }, []);
 
+  // Sauvegarde à chaque changement, une fois la reprise faite. Sans remise, le
+  // gagnant affiché ne quitte la roue qu'au lancer suivant, mais il est déjà
+  // enregistré comme passé : fermer l'outil entre-temps ne le remet pas en jeu.
+  useEffect(() => {
+    if (!charge) return;
+    enregistrerEtatRoue({
+      sansRemise,
+      passes:
+        sansRemise && gagnantId && classeActiveId
+          ? avecPasse(passes, classeActiveId, gagnantId)
+          : passes,
+    });
+  }, [charge, sansRemise, passes, gagnantId, classeActiveId]);
+
   const classeActive = classes.find((c) => c.id === classeActiveId) ?? null;
   const eleves = classeActive?.eleves ?? [];
+  // Les élèves supprimés de la classe depuis sont ignorés.
+  const tires = (classeActiveId ? (passes[classeActiveId] ?? []) : []).filter((id) =>
+    eleves.some((el) => el.id === id),
+  );
   const surLaRoue = eleves.filter((el) => !tires.includes(el.id));
   const gagnant = eleves.find((el) => el.id === gagnantId) ?? null;
   const n = surLaRoue.length;
 
   function reinitialiser() {
-    setTires([]);
+    if (classeActiveId) setPasses((prev) => ({ ...prev, [classeActiveId]: [] }));
     setGagnantId(null);
     gagnantEnAttente.current = null;
   }
 
   function changerClasse(id: string) {
+    // Sans remise, le gagnant affiché compte comme passé dans la classe quittée.
+    if (sansRemise && gagnantId && classeActiveId) {
+      const quittee = classeActiveId;
+      const sortant = gagnantId;
+      setPasses((prev) => avecPasse(prev, quittee, sortant));
+    }
     setClasseActiveId(id);
-    reinitialiser();
+    setGagnantId(null);
+    gagnantEnAttente.current = null;
   }
 
   // Révèle le gagnant : appelé à la fin de la transition, avec une minuterie de
@@ -103,10 +145,11 @@ export default function RoueDesPrenoms() {
     // Sans remise : le gagnant précédent quitte la roue au lancer suivant
     // (il reste affiché entre-temps, la roue ne saute pas à l'arrivée).
     let liste = surLaRoue;
-    if (sansRemise && gagnantId) {
+    if (sansRemise && gagnantId && classeActiveId) {
       const sortant = gagnantId;
+      const classeId = classeActiveId;
       liste = liste.filter((el) => el.id !== sortant);
-      setTires((prev) => [...prev, sortant]);
+      setPasses((prev) => avecPasse(prev, classeId, sortant));
     }
     if (liste.length === 0) return;
 
@@ -218,6 +261,11 @@ export default function RoueDesPrenoms() {
               />
               Sans remise (chacun passe une fois)
             </label>
+            {sansRemise && (
+              <p className="-mt-2 text-xs text-encre-douce">
+                Le tour continue d’une séance à l’autre, jusqu’à «&nbsp;Réinitialiser&nbsp;».
+              </p>
+            )}
 
             <p className="text-sm text-encre-douce">
               {n} élève{n > 1 ? "s" : ""} sur la roue

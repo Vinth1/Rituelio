@@ -2,8 +2,8 @@
 
 > **État d'avancement** : cadrage validé le 2026-09-17. PR 1 (documentation,
 > diagnostic et script de vérification) livrée (#9). PR 2 (évaluations de
-> conjugaison, #10) et PR 3 (écriture des classes) en revue. Prochaine étape :
-> ouverture.
+> conjugaison, #10) et PR 3 (écriture des classes, #11) mergées. Ouverture en
+> cours : correctif de la saisie du code d'inscription en revue.
 >
 > Pilier 1 de [`vision.md`](vision.md). Audit fait sur `main` = `b8028f5`.
 
@@ -210,12 +210,23 @@ transmettre le code d'inscription.**
 3. Nouveau `CLE_INSCRIPTION` (§3), transmis au collègue.
 4. Après son inscription, retrait de `CLE_INSCRIPTION`.
 
+### Correctif — saisie du code d'inscription (hors plan)
+
+À l'ouverture, le code était refusé alors que la variable de prod était correcte et
+prise en compte (vérifié : l'API de prod l'accepte). En cause, la saisie : champ
+masqué, donc fautes invisibles (majuscules, `@` au clavier AZERTY), et exposé au
+remplissage automatique du mot de passe par le navigateur.
+
+- Champ du code visible, sans remplissage automatique ni correction.
+- Espaces autour du code ignorés, dans la saisie comme dans la variable.
+- « Inscriptions fermées » (page et API) quand `CLE_INSCRIPTION` n'est pas définie,
+  par exemple sur une URL de Preview si la variable n'y est pas : retiré de la PR 4.
+
 ### PR 4 — Confort de connexion (non bloquante, à confirmer au moment de la faire)
 
 - Identifiant insensible aux majuscules (index unique sur `lower(identifiant)`) et
   connexion par identifiant ou par email.
 - Message « déjà pris » au lieu d'une erreur 500 lors d'inscriptions simultanées.
-- « Inscriptions fermées » sur `/inscription` quand le code n'est pas défini.
 - Changer de mot de passe ferme les autres sessions.
 - `.env.example` : renvoi obsolète vers `/prof/reglages` (désormais `/profil`).
 

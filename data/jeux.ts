@@ -154,7 +154,7 @@ export const jeux: Jeu[] = [
       "Mobiliser et enrichir le vocabulaire d'un champ lexical",
       "Prendre la parole à tour de rôle",
     ],
-    aide: "Choisis un thème — parmi ceux proposés ou en créant le tien — et un mode (tour simple ou élimination) ; valide chaque mot « Correct » ou « Hors thème » : l'élève suivant est aussitôt tiré au sort. Pensé pour le vidéoprojecteur.",
+    aide: "Choisis un thème — parmi ceux proposés ou en créant le tien — et un mode (tour simple ou élimination) ; valide chaque mot « Correct » ou « Hors thème » : l'élève suivant est aussitôt tiré au sort. Pensé pour le vidéoprojecteur. Le minuteur par élève (réglable au lancement, 30 s par défaut, décochable) limite le temps pour donner un mot : à zéro un bip sonne, mais rien n'est décidé sans toi — tu peux encore accepter un mot dit au buzzer, ou cliquer sur « Temps écoulé » pour passer au suivant (ce qui élimine l'élève en mode élimination). Le bouton ⏸ suspend le décompte si la classe est interrompue.",
   },
   {
     id: "conjugaison-entrainement",
