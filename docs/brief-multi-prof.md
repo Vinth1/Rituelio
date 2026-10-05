@@ -3,7 +3,7 @@
 > **État d'avancement** : cadrage validé le 2026-09-17. PR 1 (documentation,
 > diagnostic et script de vérification) livrée (#9). PR 2 (évaluations de
 > conjugaison, #10) et PR 3 (écriture des classes, #11) mergées. Ouverture en
-> cours : correctif de la saisie du code d'inscription en revue.
+> cours : code d'inscription porté par le lien d'invitation (en revue).
 >
 > Pilier 1 de [`vision.md`](vision.md). Audit fait sur `main` = `b8028f5`.
 
@@ -140,8 +140,10 @@ c'est modifier les vraies données.
 ## 3. Flux d'inscription visé
 
 1. Le prof référent remplace `CLE_INSCRIPTION` sur Vercel par un code long (32
-   caractères ou plus) et redéploie.
-2. Il transmet le code et le lien `/inscription` au collègue, en dehors de Rituelio.
+   caractères ou plus) et **redéploie** (une variable changée sans redéploiement reste
+   sans effet : le site en ligne garde l'ancienne valeur).
+2. Il transmet au collègue, en dehors de Rituelio, le **lien d'invitation**
+   `/inscription?cle=<le code>` — le code n'est plus à recopier dans un champ.
 3. Le collègue crée son compte et arrive connecté sur un `/prof` vide.
 4. Il crée **ses propres** classes dans `/classe`, puis remplit « Ma classe ».
 5. Le prof référent retire `CLE_INSCRIPTION` (Production et Preview) et redéploie :
@@ -210,17 +212,35 @@ transmettre le code d'inscription.**
 3. Nouveau `CLE_INSCRIPTION` (§3), transmis au collègue.
 4. Après son inscription, retrait de `CLE_INSCRIPTION`.
 
-### Correctif — saisie du code d'inscription (hors plan)
+### Correctif — le code d'inscription passe par le lien (hors plan)
 
 À l'ouverture, le code était refusé alors que la variable de prod était correcte et
 prise en compte (vérifié : l'API de prod l'accepte). En cause, la saisie : champ
 masqué, donc fautes invisibles (majuscules, `@` au clavier AZERTY), et exposé au
 remplissage automatique du mot de passe par le navigateur.
 
-- Champ du code visible, sans remplissage automatique ni correction.
-- Espaces autour du code ignorés, dans la saisie comme dans la variable.
-- « Inscriptions fermées » (page et API) quand `CLE_INSCRIPTION` n'est pas définie,
-  par exemple sur une URL de Preview si la variable n'y est pas : retiré de la PR 4.
+Premier correctif : champ du code visible, sans remplissage automatique ni correction,
+espaces ignorés des deux côtés, et « Inscriptions fermées » (page et API) quand
+`CLE_INSCRIPTION` n'est pas définie — par exemple sur une URL de Preview si la variable
+n'y est pas (point retiré de la PR 4).
+
+Puis, la saisie restant une source de pannes, le champ a été **supprimé** : le code
+voyage dans le **lien d'invitation** `/inscription?cle=<le code>`.
+
+- La page `/inscription` vérifie le code du lien côté serveur (toujours
+  `verifierCleInscription`, comparaison à temps constant) avant d'afficher le
+  formulaire ; l'API le revérifie à la création du compte. La garde ne bouge pas, elle
+  change seulement de porte d'entrée.
+- Trois états : inscriptions fermées (pas de `CLE_INSCRIPTION`), « Lien d'inscription
+  invalide » (lien sans code valide), formulaire (email, identifiant, mot de passe).
+- `/connexion` n'affiche plus « Créer un compte » : sans le lien, la page d'inscription
+  ne sert à rien.
+- Le code apparaît dans l'URL (historique du navigateur, journaux du collègue) : il
+  reste donc à usage unique et court — retrait de `CLE_INSCRIPTION` après l'inscription,
+  comme prévu au §3.
+- **Rappel Vercel** : les variables sont figées au déploiement. Changer
+  `CLE_INSCRIPTION` sans redéployer ne change rien en ligne, et une variable absente de
+  l'environnement visité (Preview) rend les inscriptions fermées.
 
 ### PR 4 — Confort de connexion (non bloquante, à confirmer au moment de la faire)
 
