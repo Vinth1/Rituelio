@@ -1,18 +1,22 @@
 "use client";
 
-// Formulaire de création de compte prof : email + nom d'utilisateur + mot de passe
-// + code d'inscription (secret). En cas de succès, le serveur ouvre la session et
-// on file vers l'espace prof.
+// Formulaire de création de compte prof : email + nom d'utilisateur + mot de passe.
+// Le code d'inscription n'est pas saisi ici : il vient du lien d'invitation, déjà
+// vérifié par la page, et repart tel quel à l'API (qui le revérifie). En cas de
+// succès, le serveur ouvre la session et on file vers l'espace prof.
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function FormulaireInscription() {
+export default function FormulaireInscription({
+  cleInscription,
+}: {
+  cleInscription: string;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [identifiant, setIdentifiant] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
-  const [cleInscription, setCleInscription] = useState("");
   const [erreur, setErreur] = useState("");
   const [envoi, setEnvoi] = useState(false);
 
@@ -48,7 +52,7 @@ export default function FormulaireInscription() {
     <div className="rounded-carte border border-ligne bg-surface p-6">
       <h1 className="font-titre text-2xl font-bold text-encre">Créer un compte prof</h1>
       <p className="mt-1 text-sm text-encre-douce">
-        L’inscription nécessite le code fourni par l’administrateur.
+        Ton lien d’invitation est valide : il ne reste qu’à choisir tes identifiants.
       </p>
       <form onSubmit={soumettre} className="mt-5 flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
@@ -81,22 +85,6 @@ export default function FormulaireInscription() {
             className={champ}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm font-medium text-encre-douce">
-          Code d’inscription
-          {/* Champ visible et sans remplissage automatique : masqué, il pouvait recevoir
-              le mot de passe enregistré par le navigateur, et les fautes de frappe
-              (majuscules, @ au clavier AZERTY) passaient inaperçues. */}
-          <input
-            type="text"
-            value={cleInscription}
-            onChange={(e) => setCleInscription(e.target.value)}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            className={champ}
-          />
-        </label>
         {erreur && (
           <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
             {erreur}
@@ -104,7 +92,7 @@ export default function FormulaireInscription() {
         )}
         <button
           type="submit"
-          disabled={envoi || !email || !identifiant || !motDePasse || !cleInscription}
+          disabled={envoi || !email || !identifiant || !motDePasse}
           className="self-start rounded-full bg-principal px-6 py-2.5 text-base font-bold text-sur-principal shadow-sm transition hover:bg-principal-fonce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal disabled:cursor-not-allowed disabled:opacity-50"
         >
           {envoi ? "Création…" : "Créer le compte"}

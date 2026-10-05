@@ -3,8 +3,9 @@
 // Formulaire de connexion prof. Poste le mot de passe à /api/auth/connexion ;
 // en cas de succès, le cookie de session est posé par le serveur et on navigue
 // vers la destination demandée (par défaut /prof).
+// Aucun lien vers /inscription : la création de compte se fait uniquement par le
+// lien d'invitation (/inscription?cle=…), qui porte le code d'inscription.
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function FormulaireConnexion({ next }: { next: string }) {
@@ -80,15 +81,6 @@ export default function FormulaireConnexion({ next }: { next: string }) {
           {envoi ? "Connexion…" : "Se connecter"}
         </button>
       </form>
-      <p className="mt-4 text-sm text-encre-douce">
-        Pas encore de compte ?{" "}
-        <Link
-          href="/inscription"
-          className="font-semibold text-principal hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
-        >
-          Créer un compte
-        </Link>
-      </p>
     </div>
   );
 }

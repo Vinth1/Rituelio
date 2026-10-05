@@ -83,9 +83,17 @@ jeux ouverts) reste librement accessible.
   + mot de passe**) si l'on n'est pas connecté ; la session est maintenue par un cookie `httpOnly`
   (30 jours) ; le bouton « Se déconnecter » apparaît dans l'en-tête une fois connecté. Le compte
   amorcé par `PROF_MOT_DE_PASSE` a pour identifiant **`prof`**.
-- **Créer d'autres comptes** : page **`/inscription`** (email + nom d'utilisateur + mot de passe),
-  protégée par un **code d'inscription** secret (variable d'env `CLE_INSCRIPTION`). Sans cette
-  variable, l'inscription est désactivée. À la création, le compte est connecté automatiquement.
+- **Créer d'autres comptes** : uniquement par **lien d'invitation**
+  **`/inscription?cle=<CLE_INSCRIPTION>`** — le code voyage dans le lien, il n'est plus saisi.
+  Le serveur le vérifie avant d'afficher le formulaire (email + nom d'utilisateur + mot de passe)
+  et de nouveau à la création du compte. Sans la variable `CLE_INSCRIPTION`, l'inscription est
+  désactivée ; sans code valide dans le lien, la page ne propose aucun formulaire. La page de
+  connexion ne mène donc plus à l'inscription. À la création, le compte est connecté
+  automatiquement.
+  > Sur Vercel, les variables d'environnement sont figées au déploiement : après avoir changé
+  > `CLE_INSCRIPTION`, **redéployer**, sinon le site en ligne garde l'ancienne valeur. La
+  > variable doit exister dans l'environnement visité (Production **et** Preview si l'on teste
+  > une URL de Preview).
 
 > La base est un **Postgres** défini par `DATABASE_URL`. En production, viser un
 > Postgres managé (**Neon** / **Vercel Postgres**) et appliquer le schéma une fois

@@ -90,8 +90,8 @@ dynamiques et sensibles. Client SQL : le paquet `postgres` (postgres.js), requê
     contrôle une base en lecture seule.
 - **Variables d'environnement** (`.env.local`, cf. `.env.example`) : `DATABASE_URL`
   (obligatoire), `PROF_MOT_DE_PASSE` (amorçage du compte au 1er login),
-  `CLE_INSCRIPTION` (optionnel, ouvre `/inscription`), `BLOB_READ_WRITE_TOKEN`
-  (Vercel Blob, obligatoire en prod pour la banque d'images).
+  `CLE_INSCRIPTION` (optionnel, ouvre l'inscription par lien `/inscription?cle=…`),
+  `BLOB_READ_WRITE_TOKEN` (Vercel Blob, obligatoire en prod pour la banque d'images).
 - **Fichiers téléversés** : la base ne stocke que des métadonnées. Le binaire va
   sur **Vercel Blob** (`lib/serveur/stockage-images.ts`), avec un repli
   `.data/images/` en développement. Une URL Blob `public` est imprévisible mais
