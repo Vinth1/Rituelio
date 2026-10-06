@@ -15,6 +15,7 @@ import {
   normaliserReglages,
   phraseReponse,
   piocher,
+  pronomJe,
   sujetsPossibles,
   tempsPossibles,
   tirer,
@@ -285,4 +286,12 @@ test("correction : tout tirage possible produit une phrase", () => {
     const phrase = phraseReponse(t);
     assert.ok(phrase && phrase.trim().length > 0, JSON.stringify(t));
   }
+});
+
+test("pronomJe : « j' » devant voyelle ou h muet, « je » sinon", () => {
+  assert.equal(pronomJe("aimer", "aime"), "j'");
+  assert.equal(pronomJe("habiter", "habite"), "j'");
+  assert.equal(pronomJe("finir", "ai fini"), "j'");
+  assert.equal(pronomJe("finir", "finis"), "je");
+  assert.equal(pronomJe("haïr", "hais"), "je");
 });

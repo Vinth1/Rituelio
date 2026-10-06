@@ -2,8 +2,9 @@
 
 // Jeu jouable « Conjugaison — entraînement » (au tableau, mode projection).
 // Le prof choisit 2 verbes (verbe + temps + mode), une classe, une date et les
-// contraintes de phrase, puis projette 2 tableaux où la classe complète pronom +
-// forme des 6 personnes, avec vérification ligne par ligne. La section
+// contraintes de phrase, puis projette 2 tableaux où les pronoms sont déjà écrits
+// (je, tu, il, elle, on, nous, vous, ils, elles) : la classe complète la forme,
+// case vide, avec vérification ligne par ligne. La section
 // « Ma phrase » fait produire une phrase utilisant les 2 verbes sous contraintes.
 // La séance terminée est enregistrée dans un historique par classe (localStorage).
 // Les évaluations, elles, vivent côté serveur : l'écran « Mes évaluations » les
@@ -26,7 +27,8 @@ import {
   ajouterSeance,
   seancesDeClasse,
 } from "@/lib/historique-conjugaison";
-import { ligneCorrecte } from "@/lib/conjugaison";
+import { formeAcceptee } from "@/lib/conjugaison";
+import { pronomJe } from "@/lib/roue-des-verbes";
 import SelecteurVerbe from "@/components/conjugaison/SelecteurVerbe";
 import FormVerbePerso, {
   type VerbePerso,
@@ -42,7 +44,14 @@ type Phase =
   | "suiviEval"
   | "nouveauVerbe";
 type ModeJeu = "entrainement" | "evaluation";
-type Ligne = { pronom: string; forme: string; valide: boolean | null };
+// Une ligne du tableau : le pronom est imposé, seule la forme se saisit.
+// `personne` est l'indice 0-5 du moteur de conjugaison.
+type Ligne = {
+  pronom: string;
+  personne: number;
+  forme: string;
+  valide: boolean | null;
+};
 type Partie = { entree: EntreeVerbe; conj: Conjugaison };
 type Contrainte = { label: string; validee: boolean };
 // Ce que le prof choisit pour un tableau : un verbe et un temps, indépendants
@@ -50,7 +59,7 @@ type Contrainte = { label: string; validee: boolean };
 type Choix = { infinitif: string; temps: string; mode: string };
 
 // L'impératif n'a que 3 personnes et pas de pronom : il ne rentre pas dans le
-// tableau à 6 lignes du jeu. Le moteur sait le produire, l'écran viendra plus tard.
+// tableau à pronoms du jeu. Le moteur sait le produire, l'écran viendra plus tard.
 const TEMPS_JEU = TEMPS_COLLEGE.filter((t) => t.mode !== "impératif");
 
 // Résout un choix en une partie jouable, ou null si le verbe est introuvable
@@ -64,15 +73,37 @@ function resoudre(c: Choix, connus: EntreeVerbe[]): Partie | null {
   return conj ? { entree, conj } : null;
 }
 
-function lignesVides(): Ligne[] {
-  return Array.from({ length: 6 }, () => ({
-    pronom: "",
-    forme: "",
-    valide: null,
-  }));
+// Les 9 pronoms affichés au tableau, avec la personne du moteur qui leur
+// correspond : il, elle et on partagent la 3e personne, ils et elles la 6e.
+const PRONOMS_TABLEAU: { pronom: string; personne: number }[] = [
+  { pronom: "je", personne: 0 },
+  { pronom: "tu", personne: 1 },
+  { pronom: "il", personne: 2 },
+  { pronom: "elle", personne: 2 },
+  { pronom: "on", personne: 2 },
+  { pronom: "nous", personne: 3 },
+  { pronom: "vous", personne: 4 },
+  { pronom: "ils", personne: 5 },
+  { pronom: "elles", personne: 5 },
+];
+
+// Lignes vierges d'un tableau. Seules les personnes que le verbe possède sont
+// gardées (un verbe impersonnel n'affiche pas « je »), et « je » s'élide
+// devant une voyelle ou un h muet.
+function lignesVides(partie: Partie): Ligne[] {
+  const { entree, conj } = partie;
+  return PRONOMS_TABLEAU.filter((p) => conj.lignes.includes(p.personne)).map(
+    (p) => ({
+      pronom:
+        p.personne === 0 ? pronomJe(entree.infinitif, conj.formes[0]) : p.pronom,
+      personne: p.personne,
+      forme: "",
+      valide: null,
+    }),
+  );
 }
 
-// Un tableau de conjugaison (6 lignes à compléter).
+// Un tableau de conjugaison (une ligne par pronom, forme à compléter).
 function TableauVerbe({
   partie,
   lignes,
@@ -81,7 +112,7 @@ function TableauVerbe({
 }: {
   partie: Partie;
   lignes: Ligne[];
-  onChange: (i: number, champ: "pronom" | "forme", val: string) => void;
+  onChange: (i: number, val: string) => void;
   onVerifier: (i: number) => void;
 }) {
   return (
@@ -107,26 +138,20 @@ function TableauVerbe({
               key={i}
               className={`flex items-center gap-2 rounded-moyen p-1 ${fond}`}
             >
-              <input
-                type="text"
-                value={lg.pronom}
-                onChange={(e) => onChange(i, "pronom", e.target.value)}
-                placeholder="pronom"
-                aria-label={`Pronom ligne ${i + 1}`}
-                className="w-20 shrink-0 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
-              />
+              <span className="w-14 shrink-0 text-right text-base font-bold text-encre">
+                {lg.pronom}
+              </span>
               <input
                 type="text"
                 value={lg.forme}
-                onChange={(e) => onChange(i, "forme", e.target.value)}
-                placeholder="forme conjuguée"
-                aria-label={`Forme ligne ${i + 1}`}
-                className="min-w-0 flex-1 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre placeholder:text-encre-douce focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                onChange={(e) => onChange(i, e.target.value)}
+                aria-label={`Forme pour « ${lg.pronom} »`}
+                className="min-w-0 flex-1 rounded-moyen border border-ligne bg-surface px-2 py-1.5 text-sm text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
               />
               <button
                 type="button"
                 onClick={() => onVerifier(i)}
-                aria-label={`Vérifier la ligne ${i + 1}`}
+                aria-label={`Vérifier la ligne « ${lg.pronom} »`}
                 className={`shrink-0 rounded-moyen px-2 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-principal ${
                   lg.valide === true
                     ? "bg-emerald-500 text-white"
@@ -306,7 +331,7 @@ export default function ConjugaisonEntrainement() {
     const resolues = choix.map((c) => resoudre(c, tousLesVerbes));
     if (resolues.some((p) => p === null)) return;
     setParties(resolues as Partie[]);
-    setSaisies([lignesVides(), lignesVides()]);
+    setSaisies((resolues as Partie[]).map(lignesVides));
     setPhrase("");
     setPhraseCorrigee("");
     setContraintes(contraintesChoisies.map((label) => ({ label, validee: false })));
@@ -361,12 +386,12 @@ export default function ConjugaisonEntrainement() {
   }
 
   // --- Actions (jeu) ---
-  function majLigne(t: number, i: number, champ: "pronom" | "forme", val: string) {
+  function majLigne(t: number, i: number, forme: string) {
     setSaisies((prev) =>
       prev.map((tab, ti) =>
         ti === t
           ? tab.map((lg, li) =>
-              li === i ? { ...lg, [champ]: val, valide: null } : lg,
+              li === i ? { ...lg, forme, valide: null } : lg,
             )
           : tab,
       ),
@@ -376,7 +401,9 @@ export default function ConjugaisonEntrainement() {
   function verifierLigne(t: number, i: number) {
     const conj = parties[t]?.conj;
     if (!conj) return;
-    const ok = ligneCorrecte(saisies[t][i].pronom, saisies[t][i].forme, conj, i);
+    // Le pronom est imposé : seule la forme est à contrôler.
+    const lg = saisies[t][i];
+    const ok = formeAcceptee(lg.forme, conj, lg.personne);
     setSaisies((prev) =>
       prev.map((tab, ti) =>
         ti === t
@@ -384,7 +411,7 @@ export default function ConjugaisonEntrainement() {
           : tab,
       ),
     );
-    // Mauvaise réponse : on laisse le flash rouge, puis on vide la ligne.
+    // Mauvaise réponse : on laisse le flash rouge, puis on vide la forme.
     if (!ok) {
       const cle = `${t}-${i}`;
       const ancien = effaceursRef.current.get(cle);
@@ -394,7 +421,7 @@ export default function ConjugaisonEntrainement() {
           prev.map((tab, ti) =>
             ti === t
               ? tab.map((lg, li) =>
-                  li === i ? { pronom: "", forme: "", valide: null } : lg,
+                  li === i ? { ...lg, forme: "", valide: null } : lg,
                 )
               : tab,
           ),
@@ -412,7 +439,7 @@ export default function ConjugaisonEntrainement() {
   }
 
   function reinitialiser() {
-    setSaisies([lignesVides(), lignesVides()]);
+    setSaisies(parties.map(lignesVides));
     setPhrase("");
     setPhraseCorrigee("");
     setContraintes((prev) => prev.map((c) => ({ ...c, validee: false })));
@@ -424,10 +451,10 @@ export default function ConjugaisonEntrainement() {
       infinitif: p.entree.infinitif,
       temps: p.conj.temps,
       mode: p.conj.mode,
-      lignes: saisies[t].map((lg, i) => ({
+      lignes: saisies[t].map((lg) => ({
         pronom: lg.pronom,
         forme: lg.forme,
-        correcte: ligneCorrecte(lg.pronom, lg.forme, p.conj, i),
+        correcte: formeAcceptee(lg.forme, p.conj, lg.personne),
       })),
     }));
     const seance: SeanceConj = {
@@ -526,8 +553,9 @@ export default function ConjugaisonEntrainement() {
                 ajouter des <strong>contraintes de phrase</strong> (optionnel).
               </li>
               <li>
-                <strong>Entraînement</strong> : au tableau, la classe complète les
-                6 personnes (pronom + forme) de chaque verbe ; chaque ligne se
+                <strong>Entraînement</strong> : au tableau, les pronoms sont déjà
+                écrits (je, tu, il, elle, on, nous, vous, ils, elles) et la classe
+                complète la forme de chaque verbe ; chaque ligne se
                 vérifie d’un clic (✓ vert, sinon flash rouge).{" "}
                 <strong>« Ma phrase »</strong> fait écrire une phrase qui utilise
                 les 2 verbes. « Terminer la séance » l’enregistre dans
@@ -942,7 +970,7 @@ export default function ConjugaisonEntrainement() {
             key={t}
             partie={p}
             lignes={saisies[t]}
-            onChange={(i, ch, val) => majLigne(t, i, ch, val)}
+            onChange={(i, val) => majLigne(t, i, val)}
             onVerifier={(i) => verifierLigne(t, i)}
           />
         ))}
