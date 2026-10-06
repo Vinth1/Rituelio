@@ -14,7 +14,7 @@ import { type Classe, chargerClasses } from "@/lib/classes";
 import { couleurBande } from "@/lib/couleurs";
 import { NIVEAUX, estJusqua, type Niveau } from "@/lib/niveaux";
 
-const ACCENT = "amber"; // accent de couleur du rituel « mot de la semaine »
+const ACCENT = "amber"; // accent de couleur des cartes du Mot du jour
 
 // Niveau proposé par défaut : le plus élevé, donc toute la banque est ouverte.
 const NIVEAU_PAR_DEFAUT: Niveau = NIVEAUX[NIVEAUX.length - 1].slug;
@@ -185,38 +185,39 @@ export default function MotDuJour() {
           .
         </p>
       ) : (
-        /* Grille : une carte par élève */
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        /* Grille : une carte par élève. Six colonnes et des cartes compactes :
+           une classe d'une trentaine d'élèves tient à l'écran sans défiler (F11). */
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {eleves.map((eleve) => {
             const mot = attributions[eleve.id];
             return (
               <div
                 key={eleve.id}
-                className="flex flex-col rounded-carte border border-ligne bg-surface p-4"
+                className="flex flex-col rounded-carte border border-ligne bg-surface p-3"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 break-words font-semibold leading-tight text-encre">
+                  <span className="min-w-0 break-words text-sm font-semibold leading-tight text-encre">
                     {eleve.nom}
                   </span>
                   <button
                     type="button"
                     onClick={() => tirerPour(eleve.id)}
                     aria-label={`Tirer un mot pour ${eleve.nom}`}
-                    className="shrink-0 rounded-full px-2 py-1 text-lg ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
+                    className="shrink-0 rounded-full px-1.5 py-0.5 text-base ring-1 ring-ligne transition hover:bg-fond focus:outline-none focus-visible:ring-2 focus-visible:ring-principal"
                   >
                     <span aria-hidden="true">🎲</span>
                   </button>
                 </div>
 
                 <div
-                  className={`mt-3 flex min-h-24 flex-col items-center justify-center rounded-moyen px-2 py-3 text-center ${couleurBande(ACCENT)}`}
+                  className={`mt-2 flex min-h-16 flex-col items-center justify-center rounded-moyen px-2 py-2 text-center ${couleurBande(ACCENT)}`}
                 >
                   {mot ? (
-                    <span className="w-full hyphens-auto break-words text-2xl font-bold leading-tight">
+                    <span className="w-full hyphens-auto break-words text-xl font-bold leading-tight">
                       {mot.mot}
                     </span>
                   ) : (
-                    <span className="text-3xl font-bold opacity-50">—</span>
+                    <span className="text-2xl font-bold opacity-50">—</span>
                   )}
                 </div>
               </div>
