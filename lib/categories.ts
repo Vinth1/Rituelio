@@ -12,11 +12,11 @@ export type InfoCategorie = {
 };
 
 export const CATEGORIES: InfoCategorie[] = [
-  { slug: "mot-de-la-semaine", label: "Mot de la semaine", icone: "⭐" },
-  { slug: "conjugaison", label: "Conjugator", icone: "🔀" },
+  { slug: "conjugaison", label: "Conjugaison", icone: "🔀" },
   { slug: "lexique", label: "Lexique", icone: "📚" },
   { slug: "orthographe", label: "Orthographe", icone: "✏️" },
   { slug: "expression-orale", label: "Expression orale", icone: "🗣️" },
+  { slug: "expression-ecrite", label: "Expression écrite", icone: "✍️" },
   { slug: "culture-francophone", label: "Quizz Culture", icone: "🧠" },
 ];
 
