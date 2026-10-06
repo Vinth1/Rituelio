@@ -39,8 +39,8 @@ mode de jeu), tableau de bord de classe (grille de cartes + carte « + »).
 
 ## Architecture
 
-- **Menu latéral** = catégories / rituels (ex : Mot de la semaine, Conjugaison,
-  Lexique, Orthographe, Expression orale).
+- **Menu latéral** = catégories / rituels (ex : Conjugaison,
+  Lexique, Orthographe, Expression orale, Expression écrite).
 - **Zone principale** = grille de cartes (une carte par jeu), + une carte « + ».
 - Clic sur une carte :
   - jeu `fiche` → page de détail (déroulé + onglet « Plus d'infos / Aide »)

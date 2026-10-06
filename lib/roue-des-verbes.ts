@@ -189,6 +189,12 @@ function joindre(mot: string, suivant: string, hMuet = true): string {
     : `${mot} ${suivant}`;
 }
 
+// Pronom de la 1re personne tel qu'il s'écrit devant `forme` : « j' » devant
+// une voyelle ou un h muet (« j'aime », « j'habite »), « je » sinon (« je hais »).
+export function pronomJe(infinitif: string, forme: string): string {
+  return commenceParVoyelle(forme, !H_ASPIRE.has(infinitif)) ? "j'" : "je";
+}
+
 // Forme attendue pour ce tirage. Un sujet féminin prend la variante accordée du
 // conjugueur quand elle existe (« ma sœur est arrivée »).
 export function formeAttendue(t: Tirage): string | null {

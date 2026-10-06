@@ -3,11 +3,11 @@
 // Pour ajouter un jeu : copie un objet existant et adapte ses champs.
 
 export type CategorieJeu =
-  | "mot-de-la-semaine"
   | "conjugaison"
   | "lexique"
   | "orthographe"
   | "expression-orale"
+  | "expression-ecrite"
   | "culture-francophone";
 
 export type Jeu = {
@@ -41,7 +41,7 @@ export const jeux: Jeu[] = [
   {
     id: "mot-du-jour",
     titre: "Mot du jour",
-    categorie: "mot-de-la-semaine",
+    categorie: "lexique",
     type: "jouable",
     resume: "Un mot difficile par élève",
     icone: "🎲",
@@ -124,7 +124,7 @@ export const jeux: Jeu[] = [
   {
     id: "image-mystere",
     titre: "Image mystère",
-    categorie: "expression-orale",
+    categorie: "expression-ecrite",
     type: "jouable",
     resume: "Une de tes images, tirée au sort",
     icone: "🖼️",

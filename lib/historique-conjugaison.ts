@@ -12,7 +12,7 @@ export type TableauSauve = {
   infinitif: string;
   temps: string;
   mode: string;
-  lignes: LigneSauvee[]; // les 6 personnes telles que complétées
+  lignes: LigneSauvee[]; // une ligne par pronom (9 depuis les pronoms imposés, 6 avant)
 };
 
 export type SeanceConj = {
