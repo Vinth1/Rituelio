@@ -12,7 +12,7 @@ export type TableauSauve = {
   infinitif: string;
   temps: string;
   mode: string;
-  lignes: LigneSauvee[]; // une ligne par pronom (9 depuis les pronoms imposés, 6 avant)
+  lignes: LigneSauvee[]; // une ligne par personne (6 ; 9 pour les séances où il/elle/on et ils/elles étaient séparés)
 };
 
 export type SeanceConj = {

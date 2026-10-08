@@ -3,7 +3,7 @@
 // Jeu jouable « Conjugaison — entraînement » (au tableau, mode projection).
 // Le prof choisit 2 verbes (verbe + temps + mode), une classe, une date et les
 // contraintes de phrase, puis projette 2 tableaux où les pronoms sont déjà écrits
-// (je, tu, il, elle, on, nous, vous, ils, elles) : la classe complète la forme,
+// (je, tu, il/elle/on, nous, vous, ils/elles) : la classe complète la forme,
 // case vide, avec vérification ligne par ligne. La section
 // « Ma phrase » fait produire une phrase utilisant les 2 verbes sous contraintes.
 // La séance terminée est enregistrée dans un historique par classe (localStorage).
@@ -73,18 +73,16 @@ function resoudre(c: Choix, connus: EntreeVerbe[]): Partie | null {
   return conj ? { entree, conj } : null;
 }
 
-// Les 9 pronoms affichés au tableau, avec la personne du moteur qui leur
-// correspond : il, elle et on partagent la 3e personne, ils et elles la 6e.
+// Les pronoms affichés au tableau, avec la personne du moteur qui leur
+// correspond : il, elle et on partagent la 3e personne, ils et elles la 6e,
+// d'où une seule ligne pour chacun de ces groupes (la forme est la même).
 const PRONOMS_TABLEAU: { pronom: string; personne: number }[] = [
   { pronom: "je", personne: 0 },
   { pronom: "tu", personne: 1 },
-  { pronom: "il", personne: 2 },
-  { pronom: "elle", personne: 2 },
-  { pronom: "on", personne: 2 },
+  { pronom: "il, elle, on", personne: 2 },
   { pronom: "nous", personne: 3 },
   { pronom: "vous", personne: 4 },
-  { pronom: "ils", personne: 5 },
-  { pronom: "elles", personne: 5 },
+  { pronom: "ils, elles", personne: 5 },
 ];
 
 // Lignes vierges d'un tableau. Seules les personnes que le verbe possède sont
@@ -138,7 +136,7 @@ function TableauVerbe({
               key={i}
               className={`flex items-center gap-2 rounded-moyen p-1 ${fond}`}
             >
-              <span className="w-14 shrink-0 text-right text-base font-bold text-encre">
+              <span className="w-28 shrink-0 text-right text-base font-bold text-encre">
                 {lg.pronom}
               </span>
               <input
@@ -554,7 +552,7 @@ export default function ConjugaisonEntrainement() {
               </li>
               <li>
                 <strong>Entraînement</strong> : au tableau, les pronoms sont déjà
-                écrits (je, tu, il, elle, on, nous, vous, ils, elles) et la classe
+                écrits (je, tu, il/elle/on, nous, vous, ils/elles) et la classe
                 complète la forme de chaque verbe ; chaque ligne se
                 vérifie d’un clic (✓ vert, sinon flash rouge).{" "}
                 <strong>« Ma phrase »</strong> fait écrire une phrase qui utilise
